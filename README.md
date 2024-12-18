@@ -28,10 +28,10 @@ https://github.com/alex-petrenko/sample-factory
 
 ## Installation
 
-Initialize a Python environment, i.e. with `conda` (Python versions 3.6-3.8 are supported):
+Initialize a Python environment, i.e. with `conda` (Python versions >=3.11 are supported):
 
 ```
-conda create -n swarm-rl python=3.8
+conda create -n swarm-rl python=3.11
 conda activate swarm-rl
 ```
 
