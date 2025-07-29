@@ -34,6 +34,7 @@ def make_quadrotor_env_multi(cfg, render_mode=None, **kwargs):
     use_replay_buffer = cfg.replay_buffer_sample_prob > 0.0
 
     env = QuadrotorEnvMulti(
+        cfg=cfg,
         num_agents=cfg.quads_num_agents, ep_time=cfg.quads_episode_duration, rew_coeff=rew_coeff,
         obs_repr=cfg.quads_obs_repr,
         # Neighbor

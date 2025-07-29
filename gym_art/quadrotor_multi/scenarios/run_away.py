@@ -4,8 +4,8 @@ from gym_art.quadrotor_multi.scenarios.base import QuadrotorScenario
 
 
 class Scenario_run_away(QuadrotorScenario):
-    def __init__(self, quads_mode, envs, num_agents, room_dims):
-        super().__init__(quads_mode, envs, num_agents, room_dims)
+    def __init__(self, quads_mode, envs, num_agents, room_dims, rng=None):
+        super().__init__(quads_mode, envs, num_agents, room_dims, rng)
 
     def update_goals(self):
         self.goals = self.generate_goals(self.num_agents, self.formation_center, layer_dist=self.layer_dist)

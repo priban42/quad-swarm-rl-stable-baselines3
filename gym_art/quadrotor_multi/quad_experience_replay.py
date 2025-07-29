@@ -173,7 +173,7 @@ class ExperienceReplayWrapper(gym.Wrapper):
         self.last_tick_added_to_buffer = -1e9
         self.episode_checkpoints = deque([], maxlen=self.max_episode_checkpoints_to_keep)
 
-        if np.random.uniform(0, 1) < self.replay_buffer_sample_prob and self.replay_buffer and self.env.activate_replay_buffer \
+        if self.rng.uniform(0, 1) < self.replay_buffer_sample_prob and self.replay_buffer and self.env.activate_replay_buffer \
                 and len(self.replay_buffer) > 0:
             self.replayed_events += 1
             event = self.replay_buffer.sample_event()
@@ -181,7 +181,14 @@ class ExperienceReplayWrapper(gym.Wrapper):
             obs = event.obs
             replayed_env = deepcopy(env)
             replayed_env.scenes = self.env.scenes
-            self.curr_obst_density = replayed_env.obst_density
+
+            # FIXED BY PRIBAVOJ
+            # self.curr_obst_density = replayed_env.obst_density
+            if replayed_env.use_obstacles:
+                self.curr_obst_density = replayed_env.obst_density
+            else:
+                self.curr_obst_density = 0.0
+            # FIXED BY PRIBAVOJ
 
             # we want to use these for tensorboard, so reset them to zero to get accurate stats
             replayed_env.collisions_per_episode = replayed_env.collisions_after_settle = 0

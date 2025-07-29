@@ -284,6 +284,7 @@ class QuadrotorSingle:
             "vxyzr": [-self.dynamics.vxyz_max * np.ones(3), self.dynamics.vxyz_max * np.ones(3)],
             "acc": [-self.dynamics.acc_max * np.ones(3), self.dynamics.acc_max * np.ones(3)],
             "R": [-np.ones(9), np.ones(9)],
+            "Rz": [-np.ones(3), np.ones(3)],
             "omega": [-self.dynamics.omega_max * np.ones(3), self.dynamics.omega_max * np.ones(3)],
             "t2w": [0. * np.ones(1), 5. * np.ones(1)],
             "t2t": [0. * np.ones(1), 1. * np.ones(1)],
@@ -311,6 +312,12 @@ class QuadrotorSingle:
         obs_comps = self.obs_repr.split("_")
         if self.neighbor_obs_type == 'pos_vel' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['rxyz'] + ['rvxyz']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'pos_vel_R' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['rxyz'] + ['rvxyz'] + ['R']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'pos_vel_Rz' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['rxyz'] + ['rvxyz'] + ['Rz']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'pos_Rz' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['rxyz'] + ['Rz']) * self.num_use_neighbor_obs
 
         if self.use_obstacles:
             obs_comps = obs_comps + ["octmap"]
@@ -320,6 +327,7 @@ class QuadrotorSingle:
         for comp in obs_comps:
             obs_low.append(self.obs_space_low_high[comp][0])
             obs_high.append(self.obs_space_low_high[comp][1])
+        
         obs_low = np.concatenate(obs_low)
         obs_high = np.concatenate(obs_high)
 

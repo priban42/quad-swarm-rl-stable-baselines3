@@ -51,8 +51,11 @@ QUADS_PARAMS_DICT = {
 }
 
 
-def update_formation_and_max_agent_per_layer(mode):
-    formation_index = np.random.randint(low=0, high=len(QUADS_PARAMS_DICT[mode][0]))
+def update_formation_and_max_agent_per_layer(mode, rng=None):
+    if rng is None:
+        formation_index = np.random.randint(low=0, high=len(QUADS_PARAMS_DICT[mode][0]))
+    else:
+        formation_index = rng.integers(low=0, high=len(QUADS_PARAMS_DICT[mode][0]))
     formation = QUADS_FORMATION_LIST[formation_index]
     if formation.startswith("circle"):
         num_agents_per_layer = 8
@@ -65,8 +68,11 @@ def update_formation_and_max_agent_per_layer(mode):
     return formation, num_agents_per_layer
 
 
-def update_layer_dist(low, high):
-    layer_dist = np.random.uniform(low=low, high=high)
+def update_layer_dist(low, high, rng=None):
+    if rng is None:
+        layer_dist = np.random.uniform(low=low, high=high)
+    else:
+        layer_dist = rng.uniform(low=low, high=high)
     return layer_dist
 
 

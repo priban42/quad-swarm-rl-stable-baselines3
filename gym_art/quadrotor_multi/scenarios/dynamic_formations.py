@@ -4,13 +4,14 @@ from gym_art.quadrotor_multi.scenarios.base import QuadrotorScenario
 
 
 class Scenario_dynamic_formations(QuadrotorScenario):
-    def __init__(self, quads_mode, envs, num_agents, room_dims):
-        super().__init__(quads_mode, envs, num_agents, room_dims)
+    def __init__(self, quads_mode, envs, num_agents, room_dims, rng=None):
+        super().__init__(quads_mode, envs, num_agents, room_dims, rng)
         # if increase_formation_size is True, increase the formation size
         # else, decrease the formation size
         self.increase_formation_size = True
         # low: 0.1m/s, high: 0.3m/s
         self.control_speed = np.random.uniform(low=1.0, high=3.0)
+        self.control_speed = self.rng.uniform(low=1.0, high=3.0)
 
     # change formation sizes on the fly
     def update_goals(self):

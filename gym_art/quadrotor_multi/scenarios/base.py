@@ -6,12 +6,15 @@ from gym_art.quadrotor_multi.scenarios.utils import generate_points, get_grid_di
 
 
 class QuadrotorScenario:
-    def __init__(self, quads_mode, envs, num_agents, room_dims):
+    def __init__(self, quads_mode, envs, num_agents, room_dims, rng=None):
         self.quads_mode = quads_mode
         self.envs = envs
         self.num_agents = num_agents
         self.room_dims = room_dims
         self.goals = None
+        self.rng = rng
+        if rng is None:
+            self.rng = np.random.default_rng()
 
         #  Set formation, num_agents_per_layer, lowest_formation_size, highest_formation_size, formation_size,
         #  layer_dist, formation_center
@@ -123,7 +126,7 @@ class QuadrotorScenario:
     def update_formation_and_relate_param(self):
         # Reset formation, num_agents_per_layer, lowest_formation_size, highest_formation_size, formation_size,
         # layer_dist
-        self.formation, self.num_agents_per_layer = update_formation_and_max_agent_per_layer(mode=self.quads_mode)
+        self.formation, self.num_agents_per_layer = update_formation_and_max_agent_per_layer(mode=self.quads_mode, rng=self.rng)
         # QUADS_PARAMS_DICT:
         # Key: quads_mode; Value: 0. formation, 1: [formation_low_size, formation_high_size], 2: episode_time
         lowest_dist, highest_dist = QUADS_PARAMS_DICT[self.quads_mode][1]
@@ -131,8 +134,9 @@ class QuadrotorScenario:
             get_formation_range(mode=self.quads_mode, formation=self.formation, num_agents=self.num_agents,
                                 low=lowest_dist, high=highest_dist, num_agents_per_layer=self.num_agents_per_layer)
 
-        self.formation_size = np.random.uniform(low=self.lowest_formation_size, high=self.highest_formation_size)
-        self.layer_dist = update_layer_dist(low=self.lowest_formation_size, high=self.highest_formation_size)
+        # self.formation_size = np.random.uniform(low=self.lowest_formation_size, high=self.highest_formation_size)
+        self.formation_size = self.rng.uniform(low=self.lowest_formation_size, high=self.highest_formation_size)
+        self.layer_dist = update_layer_dist(low=self.lowest_formation_size, high=self.highest_formation_size, rng=self.rng)
 
     def step(self):
         raise NotImplementedError("Implemented in a specific scenario")
@@ -148,7 +152,8 @@ class QuadrotorScenario:
         # the reset function in quadrotor_multi.py would do that
         self.goals = self.generate_goals(num_agents=self.num_agents, formation_center=self.formation_center,
                                          layer_dist=self.layer_dist)
-        np.random.shuffle(self.goals)
+        # np.random.shuffle(self.goals)
+        self.rng.shuffle(self.goals)
 
     def standard_reset(self, formation_center=None):
         # Reset formation and related parameters
@@ -164,4 +169,5 @@ class QuadrotorScenario:
         # the reset function in quadrotor_multi.py would do that
         self.goals = self.generate_goals(num_agents=self.num_agents, formation_center=self.formation_center,
                                          layer_dist=self.layer_dist)
-        np.random.shuffle(self.goals)
+        # np.random.shuffle(self.goals)
+        self.rng.shuffle(self.goals)

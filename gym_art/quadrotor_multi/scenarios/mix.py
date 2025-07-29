@@ -28,15 +28,15 @@ from gym_art.quadrotor_multi.scenarios.obstacles.o_ep_rand_bezier import Scenari
 from gym_art.quadrotor_multi.scenarios.test.o_test import Scenario_o_test
 
 
-def create_scenario(quads_mode, envs, num_agents, room_dims):
+def create_scenario(quads_mode, envs, num_agents, room_dims, rng):
     cls = eval('Scenario_' + quads_mode)
-    scenario = cls(quads_mode, envs, num_agents, room_dims)
+    scenario = cls(quads_mode, envs, num_agents, room_dims, rng)
     return scenario
 
 
 class Scenario_mix(QuadrotorScenario):
-    def __init__(self, quads_mode, envs, num_agents, room_dims):
-        super().__init__(quads_mode, envs, num_agents, room_dims)
+    def __init__(self, quads_mode, envs, num_agents, room_dims, rng=None):
+        super().__init__(quads_mode, envs, num_agents, room_dims, rng)
 
         # Once change the parameter here, should also update QUADS_PARAMS_DICT to make sure it is same as run a
         # single scenario key: quads_mode value: 0. formation, 1: [formation_low_size, formation_high_size],
@@ -74,13 +74,17 @@ class Scenario_mix(QuadrotorScenario):
         self.formation_size = self.scenario.formation_size
         return
 
-    def reset(self, obst_map=None, cell_centers=None):
-        mode_index = np.random.randint(low=0, high=len(self.quads_mode_list))
+    def reset(self, obst_map=None, cell_centers=None, mode_index=None):
+        if mode_index is None:
+            # mode_index = np.random.randint(low=0, high=len(self.quads_mode_list))
+            mode_index = self.rng.integers(0, len(self.quads_mode_list))
+        else:
+            mode_index = mode_index%len(self.quads_mode_list)
         mode = self.quads_mode_list[mode_index]
 
         # Init the scenario
         self.scenario = create_scenario(quads_mode=mode, envs=self.envs, num_agents=self.num_agents,
-                                        room_dims=self.room_dims)
+                                        room_dims=self.room_dims, rng=self.rng)
 
         if obst_map is not None:
             self.scenario.reset(obst_map, cell_centers)

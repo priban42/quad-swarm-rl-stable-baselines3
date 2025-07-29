@@ -4,8 +4,8 @@ from gym_art.quadrotor_multi.scenarios.base import QuadrotorScenario
 
 
 class Scenario_dynamic_same_goal(QuadrotorScenario):
-    def __init__(self, quads_mode, envs, num_agents, room_dims):
-        super().__init__(quads_mode, envs, num_agents, room_dims)
+    def __init__(self, quads_mode, envs, num_agents, room_dims, rng=None):
+        super().__init__(quads_mode, envs, num_agents, room_dims, rng)
 
         duration_time = 5.0
         self.control_step_for_sec = int(duration_time * self.envs[0].control_freq)
@@ -30,7 +30,9 @@ class Scenario_dynamic_same_goal(QuadrotorScenario):
 
     def reset(self):
         # Update duration time
-        duration_time = np.random.uniform(low=4.0, high=6.0)
+        # duration_time = np.random.uniform(low=4.0, high=6.0)
+        duration_time = self.rng.uniform(low=4.0, high=6.0)
+
         self.control_step_for_sec = int(duration_time * self.envs[0].control_freq)
 
         # Reset formation, and parameters related to the formation; formation center; goals
