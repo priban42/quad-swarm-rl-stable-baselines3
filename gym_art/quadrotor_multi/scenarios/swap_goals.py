@@ -20,7 +20,7 @@ class Scenario_swap_goals(QuadrotorScenario):
         tick = self.envs[0].tick
         # Switch every [4, 6] seconds
         if tick % self.control_step_for_sec == 0 and tick > 0:
-            print("############", self.control_step_for_sec)
+            # print("############", self.control_step_for_sec)
             self.update_goals()
 
         return

@@ -38,7 +38,8 @@ QUADS_NEIGHBOR_OBS_TYPE = {
     'pos_vel': 6,
     'pos_vel_R':15,
     'pos_Rz':6,
-    'pos_vel_Rz':9
+    'pos_vel_Rz':9,
+    'pos':3
 }
 
 QUADS_OBSTACLE_OBS_TYPE = {

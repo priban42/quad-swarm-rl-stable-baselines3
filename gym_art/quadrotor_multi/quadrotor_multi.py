@@ -47,6 +47,7 @@ class QuadrotorEnvMulti(gym.Env):
         # Predefined Parameters
         self.cfg = cfg
         self.rng = np.random.default_rng(seed=self.cfg.seed)
+        print(f"SEED:{self.cfg.seed}")
         self.num_agents = num_agents
         obs_self_size = QUADS_OBS_REPR[obs_repr]
         if neighbor_visible_num == -1:
@@ -192,16 +193,16 @@ class QuadrotorEnvMulti(gym.Env):
         self.render_mode =render_mode
         self.quads_render = quads_render
         self.scenes = []
+        self.render_speed = 1.0
+        self.quads_formation_size = 2.0
+        self.reset_scene = False
         if self.quads_render:
-            self.reset_scene = False
             self.simulation_start_time = 0
             self.frames_since_last_render = self.render_skip_frames = 0
             self.render_every_nth_frame = 1
             # # Use this to control rendering speed
-            self.render_speed = 1.0
             self.render_every_nth_frame = 4
             self.allow_skip_frames = False
-            self.quads_formation_size = 2.0
             self.all_collisions = {}
 
         # Log
@@ -213,7 +214,12 @@ class QuadrotorEnvMulti(gym.Env):
         self.agent_col_obst = np.ones(self.num_agents)
 
         # Log pribavoj
+        self.test_logs = False
+        if "test" in cfg:
+            if cfg["test"]:
+                self.test_logs = True
         self.metric_dist_to_goal = [[] for _ in range(len(self.envs))]
+        self.all_colisions_per_episode = []
 
         # Others
         self.apply_collision_force = True
@@ -489,7 +495,8 @@ class QuadrotorEnvMulti(gym.Env):
         new_quad_collision = np.array([x for x in curr_drone_collisions if tuple(x) not in old_quad_collision])
 
         self.last_step_unique_collisions = np.setdiff1d(curr_drone_collisions, self.prev_drone_collisions)
-
+        if len(self.last_step_unique_collisions) > 0:
+            print("collision detected")
         # # Filter distance_matrix; Only contains quadrotor pairs with distance <= self.collision_threshold
         near_quad_ids = np.where(distance_matrix[:, 2] <= self.collision_falloff_threshold)
         distance_matrix = distance_matrix[near_quad_ids]
@@ -595,7 +602,8 @@ class QuadrotorEnvMulti(gym.Env):
                     np.mean(self.distance_to_goal[i][-5:]) / self.envs[0].dt < self.scenario.approch_goal_metric \
                     and not self.reached_goal[i]:
                 self.reached_goal[i] = True
-            self.metric_dist_to_goal[i].append(np.linalg.norm(self.envs[i].dynamics.pos - self.envs[i].goal))
+            if self.test_logs:
+                self.metric_dist_to_goal[i].append(np.linalg.norm(self.envs[i].dynamics.pos - self.envs[i].goal))
 
         # 3. Applying random forces: 1) aerodynamics 2) between drones 3) obstacles 4) room
         self_state_update_flag = False
@@ -771,7 +779,9 @@ class QuadrotorEnvMulti(gym.Env):
                     infos[i]['episode_extra_stats']['metric/agent_obst_col_rate'] = agent_obst_col_ratio
                     infos[i]['episode_extra_stats'][f'{scenario_name}/agent_obst_col_rate'] = agent_obst_col_ratio
 
-            self.save_plot_info()
+            if self.test_logs:
+                self.all_colisions_per_episode.append(self.collisions_per_episode)
+                self.save_plot_info()
             obs = self.reset()
             # terminate the episode for all "sub-envs"
             dones = [True] * len(dones)
@@ -779,6 +789,8 @@ class QuadrotorEnvMulti(gym.Env):
         return obs, rewards, dones, infos
 
     def render(self, verbose=False):
+        if not self.quads_render:
+            return None
         models = tuple(e.dynamics.model for e in self.envs)
 
         if len(self.scenes) == 0:
@@ -892,5 +904,6 @@ class QuadrotorEnvMulti(gym.Env):
         path = experiment_dir(cfg=self.cfg)
         # data['distance_to_goal'] = self.distance_to_goal
         data['distance_to_goal'] = np.array(self.metric_dist_to_goal)
+        data['collisions'] = np.array(self.all_colisions_per_episode)
         with open(path + '/plot_data.p', 'wb') as f:
             pickle.dump(data, f)
