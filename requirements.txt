@@ -16,4 +16,4 @@ pandas==2.2.3
 torch==2.5.0
 bezier==2023.7.28
 typeguard==4.3.0
-osqp==0.6.7.post3
+osqp==0.6.7
