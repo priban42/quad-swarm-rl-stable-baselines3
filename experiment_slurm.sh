@@ -16,4 +16,5 @@ echo "Modules loaded"
 source ./quad-swarm-env/bin/activate
 echo "virtual environment sourced"
 # Run your experiment
-python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=1 --pause_between=1 --experiments_per_gpu=1 --num_gpus=1 &
+python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=1 --pause_between=1 --experiments_per_gpu=1 --num_gpus=1
+echo "Finished at: $(date)"
