@@ -3,8 +3,9 @@ original remote: https://github.com/Zhehui-Huang/quad-swarm-rl
 micromamba activate swarm-rl
 
 {topdown,chase,side,global,corner0,corner1,corner2,corner3,topdownfollow}
-
+https://graphite.dev/guides/git-pull-overwrite-local-changes#how-to-overwrite-local-changes-with-git-pull
 launch on cluster:
+git reset --hard && git pull
 source start-quad.sh
 srun -p gpufast --gres=gpu:1 -n 33  --pty bash -i
 nano ~/quad-swarm-rl/swarm_rl/runs/quad_multi_mix_modified.py
