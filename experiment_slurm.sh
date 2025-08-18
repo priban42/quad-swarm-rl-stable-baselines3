@@ -8,5 +8,7 @@
 #SBATCH --cpus-per-task=33
 #SBATCH --gres=gpu:1                  # uncomment if you need GPUs
 
+ml SciPy-bundle/2023.11-gfbf-2023b PyTorch/2.7.0-foss-2023b-CUDA-12.4.0
+source ./quad-swarm-env/bin/activate
 # Run your experiment
 python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=1 --pause_between=1 --experiments_per_gpu=1 --num_gpus=1 &
