@@ -320,6 +320,8 @@ class QuadrotorSingle:
             obs_comps = obs_comps + (['rxyz'] + ['Rz']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'pos' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['rxyz']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'rng3' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['rxyz']) * self.num_use_neighbor_obs
 
         if self.use_obstacles:
             obs_comps = obs_comps + ["octmap"]

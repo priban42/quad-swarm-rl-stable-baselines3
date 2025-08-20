@@ -271,6 +271,8 @@ class QuadrotorEnvMulti(gym.Env):
             R_rel = np.stack([cur_R_inv@self.rot[j] for j in indices])
             R_rel_flat = R_rel.reshape(R_rel.shape[0], -1)
             ret = np.concatenate((ret, R_rel_flat), axis=1)
+        if "rng3" in self.envs[i].neighbor_obs_type:
+            ret = np.concatenate([ret, np.random.rand(len(indices), 3)], axis=1)
         return ret
 
     def get_obs_neighbor_rel(self, env_id, closest_drones):
@@ -407,7 +409,7 @@ class QuadrotorEnvMulti(gym.Env):
             self.scenario.reset(obst_map=self.obst_map, cell_centers=cell_centers, mode_index=self.rng.integers(0, 100))
         else:
             # self.scenario.reset(mode_index=self.rng.integers(0, 100))
-            self.scenario.reset(mode_index=7)
+            self.scenario.reset()
 
         # Replay buffer
         if self.use_replay_buffer and not self.activate_replay_buffer:
