@@ -11,8 +11,7 @@ echo "SLURM_JOBID = $SLURM_JOBID"
 echo "Running on: $(hostname)"
 echo "Starting at: $(date)"
 
-#ml SciPy-bundle/2023.11-gfbf-2023b PyTorch/2.7.0-foss-2023b-CUDA-12.4.0
-ml SciPy-bundle/2023.11-gfbf-2023b PyTorch/2.5.0-foss-2023b-CUDA-12.4.0 typing-extensions/4.14.0-GCCcore-14.2.0
+ml SciPy-bundle/2023.11-gfbf-2023b PyTorch/2.5.0-foss-2023b-CUDA-12.4.0 typing-extensions/4.11.0-GCCcore-13.2.0
 echo "Modules loaded"
 source ./quad-swarm-env/bin/activate
 echo "virtual environment sourced"
