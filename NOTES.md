@@ -10,6 +10,10 @@ source start-quad.sh
 srun -p gpufast --gres=gpu:1 -n 33  --pty bash -i
 nano ~/quad-swarm-rl/swarm_rl/runs/quad_multi_mix_modified.py
 python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=1 --pause_between=1 --experiments_per_gpu=1 --num_gpus=1 &
+sbatch experiment_slurm.sh  # run the experiment
+squeue -u $USER  # check the job status
+scancel 10182533  # cancel job
+
 
 train wandb:
 python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=4 --pause_between=1 --experiments_per_gpu=4 --num_gpus=1
