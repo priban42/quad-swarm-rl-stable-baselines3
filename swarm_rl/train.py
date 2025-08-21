@@ -12,14 +12,7 @@ from sample_factory.train import run_rl
 from swarm_rl.env_wrappers.quad_utils import make_quadrotor_env
 from swarm_rl.env_wrappers.quadrotor_params import add_quadrotors_env_args, quadrotors_override_defaults
 from swarm_rl.models.quad_multi_model import register_models
-import torch
-import numpy as np
 
-torch.serialization.add_safe_globals([
-    np.core.multiarray.scalar,
-    np.dtype,
-    np.dtype('float64').__class__,
-])
 
 def register_swarm_components():
     
