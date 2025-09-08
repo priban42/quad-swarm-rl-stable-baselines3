@@ -116,7 +116,7 @@ def launch_script():
     ]
     #######
     pos_4_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -127,7 +127,7 @@ def launch_script():
         "--quads_view_mode", "global"
     ]
     pos_Rz_4_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -138,7 +138,7 @@ def launch_script():
         "--quads_view_mode", "global"
     ]
     pos_vel_4_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -149,7 +149,7 @@ def launch_script():
         "--quads_view_mode", "global"
     ]
     pos_vel_Rz_4_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -160,7 +160,7 @@ def launch_script():
         "--quads_view_mode", "global"
     ]
     pos_8_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -171,7 +171,7 @@ def launch_script():
         "--quads_view_mode", "global"
     ]
     pos_Rz_8_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -182,7 +182,7 @@ def launch_script():
         "--quads_view_mode", "global"
     ]
     pos_vel_8_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -193,7 +193,7 @@ def launch_script():
         "--quads_view_mode", "global"
     ]
     pos_vel_Rz_8_ = [
-        sys.executable, "swarm_rl/enjoy.py",
+        sys.executable, "-m", "swarm_rl.enjoy",
         "--algo=APPO",
         "--env=quadrotor_multi",
         "--replay_buffer_sample_prob=0",
@@ -203,10 +203,11 @@ def launch_script():
         "--experiment=00_pos_vel_Rz_8_q.c.rew_5.0",
         "--quads_view_mode", "global"
     ]
+
     #######
     # experiments = [baseline_4, npos]
-    # experiments = [baseline_4]
-    experiments = [pos_4_, pos_Rz_4_, pos_vel_4_, pos_vel_Rz_4_, pos_8_, pos_Rz_8_, pos_vel_8_, pos_vel_Rz_8_]
+    experiments = [baseline_4]
+    # experiments = [pos_4_, pos_Rz_4_, pos_vel_4_, pos_vel_Rz_4_, pos_8_, pos_Rz_8_, pos_vel_8_, pos_vel_Rz_8_]
 
     for experiment in experiments:
         global_data = {"avg_dist":{}, "distance_to_goal":{}, "collisions":{}}
