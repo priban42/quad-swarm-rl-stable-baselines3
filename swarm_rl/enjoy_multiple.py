@@ -114,12 +114,103 @@ def launch_script():
         "--experiment=00_npos_4_q.c.rew_5.0",
         "--quads_view_mode", "global"
     ]
-
-    experiments = [baseline_4, npos]
+    #######
+    pos_4_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_4_",
+        "--experiment=00_pos_4_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_Rz_4_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_Rz_4_",
+        "--experiment=00_pos_Rz_4_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_vel_4_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_vel_4_",
+        "--experiment=00_pos_vel_4_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_vel_Rz_4_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_vel_Rz_4_",
+        "--experiment=00_pos_vel_Rz_4_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_8_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_8_",
+        "--experiment=00_pos_8_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_Rz_8_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_Rz_8_",
+        "--experiment=00_pos_Rz_8_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_vel_8_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_vel_8_",
+        "--experiment=00_pos_vel_8_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_vel_Rz_8_ = [
+        sys.executable, "swarm_rl/enjoy.py",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/quads_multi_mix_baseline_8a_local_v116/pos_vel_Rz_8_",
+        "--experiment=00_pos_vel_Rz_8_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    #######
+    # experiments = [baseline_4, npos]
+    # experiments = [baseline_4]
+    experiments = [pos_4_, pos_Rz_4_, pos_vel_4_, pos_vel_Rz_4_, pos_8_, pos_Rz_8_, pos_vel_8_, pos_vel_Rz_8_]
 
     for experiment in experiments:
         global_data = {"avg_dist":{}, "distance_to_goal":{}, "collisions":{}}
-        for i in range(1, 2):
+        for i in range(1, 16):
             num_agents = i*4
             print(f"number of quads:{num_agents}")
             subprocess.run(experiment + [f"--quads_num_agents={num_agents}"])
@@ -128,6 +219,7 @@ def launch_script():
             global_data["distance_to_goal"][num_agents] = data["distance_to_goal"]
             global_data["collisions"][num_agents] = data["collisions"]
         save_data(global_data, experiment, "global_data.p")
+        print(f"saved global data for {num_agents=}")
 
         # subprocess.run(pos_Rz_4)
         # subprocess.run(pos_Rz_vel_4 + ["--quads_num_agents=8"])

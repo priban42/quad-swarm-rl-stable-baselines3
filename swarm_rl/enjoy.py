@@ -7,7 +7,7 @@ import numpy as np
 
 def main():
     """Script entry point."""
-    render = True
+    render = False
     register_swarm_components()
     cfg = parse_swarm_cfg(argv=sys.argv[1:] + ["--seed=1"], evaluation=True)
     # cfg = parse_swarm_cfg(evaluation=True)

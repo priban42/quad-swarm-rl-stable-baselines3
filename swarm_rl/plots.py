@@ -6,10 +6,21 @@ import numpy as np
 
 def main():
     BASE_PATH = Path('./train_dir/quads_multi_mix_baseline_8a_local_v116')
-    experiments = {"pozice + rychlost": 'quad_baseline_4_/00_quad_baseline_4_q.c.rew_5.0',}
+    # experiments = {"pozice + rychlost": 'quad_baseline_4_/00_quad_baseline_4_q.c.rew_5.0',}
                    # "pozice + rychlost + orientace":'quad_neighbor_Rz_4_/00_quad_neighbor_Rz_4_q.c.rew_5.0',
                    # "pozice + orientace":'quad_neighbor_pos_Rz_4_/00_quad_neighbor_pos_Rz_4_q.c.rew_5.0',
                    # "pozice":'quad_neighbor_pos_4_/00_quad_neighbor_pos_4_q.c.rew_5.0'}
+    experiments = {
+        "pozice": "pos_4_/00_pos_4_q.c.rew_5.0",
+        "pozice + orientace": "pos_Rz_4_/00_pos_Rz_4_q.c.rew_5.0",
+        "pozice + rychlost": "pos_vel_4_/00_pos_vel_4_q.c.rew_5.0",
+        "pozice + rychlost + orientace": "pos_vel_Rz_4_/00_pos_vel_Rz_4_q.c.rew_5.0",
+        "pozice (8)": "pos_8_/00_pos_8_q.c.rew_5.0",
+        "pozice + orientace (8)": "pos_Rz_8_/00_pos_Rz_8_q.c.rew_5.0",
+        "pozice + rychlost (8)": "pos_vel_8_/00_pos_vel_8_q.c.rew_5.0",
+        "pozice + rychlost + orientace (8)": "pos_vel_Rz_8_/00_pos_vel_Rz_8_q.c.rew_5.0",
+    }
+
     experiments_data = {}
     for name in experiments:
         path = BASE_PATH / experiments[name]
