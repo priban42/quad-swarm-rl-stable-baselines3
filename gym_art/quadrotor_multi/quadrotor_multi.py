@@ -242,6 +242,34 @@ class QuadrotorEnvMulti(gym.Env):
     #     vel_rel = vel_neighbor - cur_vel
     #     # return pos_rel, vel_rel
     #     return np.concatenate((pos_rel, vel_rel), axis=1)
+    @staticmethod
+    def rotation_matrix(axis, angle):
+        """
+        Create a 3x3 rotation matrix from an axis and an angle using Rodrigues' formula.
+
+        Parameters:
+        axis (array-like): A 3-element array representing the axis of rotation.
+        angle (float): Rotation angle in radians.
+
+
+        Returns:
+        numpy.ndarray: A 3x3 rotation matrix.
+        """
+        axis = np.asarray(axis, dtype=float)
+        axis = axis / np.linalg.norm(axis)  # normalize axis
+        x, y, z = axis
+
+        c = np.cos(angle)
+        s = np.sin(angle)
+        C = 1 - c
+
+        R = np.array([
+            [c + x * x * C, x * y * C - z * s, x * z * C + y * s],
+            [y * x * C + z * s, c + y * y * C, y * z * C - x * s],
+            [z * x * C - y * s, z * y * C + x * s, c + z * z * C]
+        ])
+
+        return R
 
     def get_rel_pos_vel_item(self, env_id, indices=None):
         i = env_id
@@ -250,7 +278,21 @@ class QuadrotorEnvMulti(gym.Env):
             # if not specified explicitly, consider all neighbors
             indices = [j for j in range(self.num_agents) if j != i]
         ret = np.zeros((len(indices), 0))
-        if "pos" in self.envs[i].neighbor_obs_type:
+        if "npos" in self.envs[i].neighbor_obs_type:
+            cur_pos = self.pos[i]
+            pos_neighbor = np.stack([self.pos[j] for j in indices])
+            pos_rel = pos_neighbor - cur_pos
+            for p in pos_rel:
+                length = np.linalg.norm(p)
+                cov = np.diag([0.001 * length, 0.001 * length, 0.01 * length])
+                p_noise = np.random.multivariate_normal(np.array([0, 0, 0]), cov)
+                cross = np.cross(np.array([0, 0, 1]), p[:3])
+                angle = np.arccos(np.dot(np.array([0, 0, 1]), p[:3]) / (
+                            np.linalg.norm(np.array([0, 0, 1])) * np.linalg.norm(p[:3])))
+                R_pc = self.rotation_matrix(cross, angle)
+                pos_rel + R_pc@p_noise
+            ret = np.concatenate((ret, pos_rel), axis=1)
+        elif "pos" in self.envs[i].neighbor_obs_type:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
             pos_rel = pos_neighbor - cur_pos
@@ -409,7 +451,10 @@ class QuadrotorEnvMulti(gym.Env):
             self.scenario.reset(obst_map=self.obst_map, cell_centers=cell_centers, mode_index=self.rng.integers(0, 100))
         else:
             # self.scenario.reset(mode_index=self.rng.integers(0, 100))
-            self.scenario.reset()
+            if "mode_index" in self.cfg:
+                self.scenario.reset(mode_index=self.cfg["mode_index"])
+            else:
+                self.scenario.reset()
 
         # Replay buffer
         if self.use_replay_buffer and not self.activate_replay_buffer:

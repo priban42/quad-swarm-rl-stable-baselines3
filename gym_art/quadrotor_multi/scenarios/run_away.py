@@ -18,6 +18,7 @@ class Scenario_run_away(QuadrotorScenario):
 
         if tick % control_step_for_sec == 0 and tick > 0:
             g_index = np.random.randint(low=1, high=self.num_agents, size=2)
+            # g_index = self.rng.randint(low=1, high=self.num_agents, size=2)
             self.goals[0] = self.goals[g_index[0]]
             self.goals[1] = self.goals[g_index[1]]
             self.envs[0].goal = self.goals[0]
@@ -35,7 +36,8 @@ class Scenario_run_away(QuadrotorScenario):
         # the reset function in quadrotor_multi.py would do that
         self.goals = self.generate_goals(num_agents=self.num_agents, formation_center=self.formation_center,
                                          layer_dist=self.layer_dist)
-        np.random.shuffle(self.goals)
+        # np.random.shuffle(self.goals)
+        self.rng.shuffle(self.goals)
 
     def update_formation_size(self, new_formation_size):
         if new_formation_size != self.formation_size:

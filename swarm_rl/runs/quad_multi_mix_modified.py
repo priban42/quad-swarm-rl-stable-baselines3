@@ -20,7 +20,7 @@ QUAD_BASELINE_CLI_8 = (
 )
 
 _experiment = Experiment(
-    'pos_4',
+    'pos_test_4',
     QUAD_BASELINE_CLI_8,
     _params.generate_params(randomize=False),
 )

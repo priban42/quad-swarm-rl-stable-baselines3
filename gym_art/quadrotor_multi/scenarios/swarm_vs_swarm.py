@@ -22,7 +22,8 @@ class Scenario_swarm_vs_swarm(QuadrotorScenario):
         box_size = self.envs[0].box
         dist_low_bound = self.lowest_formation_size
         # Get the 1st goal center
-        x, y = np.random.uniform(low=-box_size, high=box_size, size=(2,))
+        # x, y = np.random.uniform(low=-box_size, high=box_size, size=(2,))
+        x, y = self.rng.uniform(low=-box_size, high=box_size, size=(2,))
         # Get z value, and make sure all goals will above the ground
         z = get_z_value(num_agents=self.num_agents, num_agents_per_layer=self.num_agents_per_layer,
                         box_size=box_size, formation=self.formation, formation_size=self.formation_size)
@@ -30,10 +31,13 @@ class Scenario_swarm_vs_swarm(QuadrotorScenario):
         goal_center_1 = np.array([x, y, z])
 
         # Get the 2nd goal center
-        goal_center_distance = np.random.uniform(low=box_size / 4, high=box_size)
+        # goal_center_distance = np.random.uniform(low=box_size / 4, high=box_size)
+        goal_center_distance = self.rng.uniform(low=box_size / 4, high=box_size)
 
-        phi = np.random.uniform(low=-np.pi, high=np.pi)
-        theta = np.random.uniform(low=-0.5 * np.pi, high=0.5 * np.pi)
+        # phi = np.random.uniform(low=-np.pi, high=np.pi)
+        # theta = np.random.uniform(low=-0.5 * np.pi, high=0.5 * np.pi)
+        phi = self.rng.uniform(low=-np.pi, high=np.pi)
+        theta = self.rng.uniform(low=-0.5 * np.pi, high=0.5 * np.pi)
         goal_center_2 = goal_center_1 + goal_center_distance * np.array(
             [np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
         diff_x, diff_y, diff_z = goal_center_2 - goal_center_1
@@ -65,8 +69,10 @@ class Scenario_swarm_vs_swarm(QuadrotorScenario):
         self.update_formation_and_relate_param()
         self.create_formations(self.goal_center_1, self.goal_center_2)
         # Shuffle goals
-        np.random.shuffle(self.goals_1)
-        np.random.shuffle(self.goals_2)
+        # np.random.shuffle(self.goals_1)
+        # np.random.shuffle(self.goals_2)
+        self.rng.shuffle(self.goals_1)
+        self.rng.shuffle(self.goals_2)
         self.goals = np.concatenate([self.goals_1, self.goals_2])
         for i, env in enumerate(self.envs):
             env.goal = self.goals[i]
@@ -80,7 +86,8 @@ class Scenario_swarm_vs_swarm(QuadrotorScenario):
 
     def reset(self):
         # Update duration time
-        duration_time = np.random.uniform(low=4.0, high=6.0)
+        # duration_time = np.random.uniform(low=4.0, high=6.0)
+        duration_time = self.rng.uniform(low=4.0, high=6.0)
         self.control_step_for_sec = int(duration_time * self.envs[0].control_freq)
 
         # Reset formation and related parameters

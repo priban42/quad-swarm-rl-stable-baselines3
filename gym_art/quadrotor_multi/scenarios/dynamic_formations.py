@@ -10,7 +10,7 @@ class Scenario_dynamic_formations(QuadrotorScenario):
         # else, decrease the formation size
         self.increase_formation_size = True
         # low: 0.1m/s, high: 0.3m/s
-        self.control_speed = np.random.uniform(low=1.0, high=3.0)
+        # self.control_speed = np.random.uniform(low=1.0, high=3.0)
         self.control_speed = self.rng.uniform(low=1.0, high=3.0)
 
     # change formation sizes on the fly
@@ -22,10 +22,12 @@ class Scenario_dynamic_formations(QuadrotorScenario):
     def step(self):
         if self.formation_size <= -self.highest_formation_size:
             self.increase_formation_size = True
-            self.control_speed = np.random.uniform(low=1.0, high=3.0)
+            # self.control_speed = np.random.uniform(low=1.0, high=3.0)
+            self.control_speed = self.rng.uniform(low=1.0, high=3.0)
         elif self.formation_size >= self.highest_formation_size:
             self.increase_formation_size = False
-            self.control_speed = np.random.uniform(low=1.0, high=3.0)
+            # self.control_speed = np.random.uniform(low=1.0, high=3.0)
+            self.control_speed = self.rng.uniform(low=1.0, high=3.0)
 
         if self.increase_formation_size:
             self.formation_size += 0.001 * self.control_speed
@@ -36,9 +38,10 @@ class Scenario_dynamic_formations(QuadrotorScenario):
         return
 
     def reset(self):
-        self.increase_formation_size = True if np.random.uniform(low=0.0, high=1.0) < 0.5 else False
-        self.control_speed = np.random.uniform(low=1.0, high=3.0)
-
+        # self.increase_formation_size = True if np.random.uniform(low=0.0, high=1.0) < 0.5 else False
+        # self.control_speed = np.random.uniform(low=1.0, high=3.0)
+        self.increase_formation_size = True if self.rng.uniform(low=0.0, high=1.0) < 0.5 else False
+        self.control_speed = self.rng.uniform(low=1.0, high=3.0)
         # Reset formation, and parameters related to the formation; formation center; goals
         self.standard_reset()
 

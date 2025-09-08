@@ -114,27 +114,12 @@ def launch_script():
         "--experiment=00_npos_4_q.c.rew_5.0",
         "--quads_view_mode", "global"
     ]
-
+    # experiments = [baseline_4, pos_Rz_vel_4, pos_Rz_4, pos]
     experiments = [baseline_4, npos]
-
     for experiment in experiments:
-        global_data = {"avg_dist":{}, "distance_to_goal":{}, "collisions":{}}
-        for i in range(1, 2):
-            num_agents = i*4
-            print(f"number of quads:{num_agents}")
-            subprocess.run(experiment + [f"--quads_num_agents={num_agents}"])
-            data = read_data(experiment)
-            global_data["avg_dist"][num_agents] = (np.mean(data["distance_to_goal"]))
-            global_data["distance_to_goal"][num_agents] = data["distance_to_goal"]
-            global_data["collisions"][num_agents] = data["collisions"]
-        save_data(global_data, experiment, "global_data.p")
+        subprocess.run(experiment + ["--quads_num_agents=8"])
+    merge_videos(experiments)
 
-        # subprocess.run(pos_Rz_4)
-        # subprocess.run(pos_Rz_vel_4 + ["--quads_num_agents=8"])
-        # read_data(pos_Rz_vel_4)
-        # subprocess.run(baseline_4)
-
-    # merge_videos(experiments)
 
 if __name__ == "__main__":
     launch_script()
