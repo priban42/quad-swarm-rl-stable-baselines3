@@ -6,7 +6,7 @@ micromamba activate swarm-rl
 https://graphite.dev/guides/git-pull-overwrite-local-changes#how-to-overwrite-local-changes-with-git-pull
 launch on cluster:
 git reset --hard && git pull
-source start-quad.sh
+source ~/start-quad.sh
 srun -p gpufast --gres=gpu:1 -n 33  --pty bash -i
 nano ~/quad-swarm-rl/swarm_rl/runs/quad_multi_mix_modified.py
 python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=1 --pause_between=1 --experiments_per_gpu=1 --num_gpus=1 &

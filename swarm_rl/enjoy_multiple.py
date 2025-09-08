@@ -206,8 +206,8 @@ def launch_script():
 
     #######
     # experiments = [baseline_4, npos]
-    experiments = [baseline_4]
-    # experiments = [pos_4_, pos_Rz_4_, pos_vel_4_, pos_vel_Rz_4_, pos_8_, pos_Rz_8_, pos_vel_8_, pos_vel_Rz_8_]
+    # experiments = [baseline_4]
+    experiments = [pos_4_, pos_Rz_4_, pos_vel_4_, pos_vel_Rz_4_, pos_8_, pos_Rz_8_, pos_vel_8_, pos_vel_Rz_8_]
 
     for experiment in experiments:
         global_data = {"avg_dist":{}, "distance_to_goal":{}, "collisions":{}}
