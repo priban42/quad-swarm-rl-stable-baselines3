@@ -114,8 +114,30 @@ def launch_script():
         "--experiment=00_npos_4_q.c.rew_5.0",
         "--quads_view_mode", "global"
     ]
-    # experiments = [baseline_4, pos_Rz_vel_4, pos_Rz_4, pos]
-    experiments = [baseline_4, npos]
+    pos_4_ = [
+        sys.executable, "-m", "swarm_rl.enjoy",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/RCI_experiments/pos_4_",
+        "--experiment=00_pos_4_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    pos_vel_Rz_4_ = [
+        sys.executable, "-m", "swarm_rl.enjoy",
+        "--algo=APPO",
+        "--env=quadrotor_multi",
+        "--replay_buffer_sample_prob=0",
+        "--quads_use_numba=False",
+        f"--quads_render={quads_render}",
+        "--train_dir=./train_dir/RCI_experiments/pos_vel_Rz_4_",
+        "--experiment=00_pos_vel_Rz_4_q.c.rew_5.0",
+        "--quads_view_mode", "global"
+    ]
+    experiments = [pos_4_, npos]
+    # experiments = [baseline_4, npos]
     for experiment in experiments:
         subprocess.run(experiment + ["--quads_num_agents=8"])
     merge_videos(experiments)

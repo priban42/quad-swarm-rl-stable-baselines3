@@ -6,19 +6,21 @@ import numpy as np
 
 def main():
     BASE_PATH = Path('./train_dir/quads_multi_mix_baseline_8a_local_v116')
+
     # experiments = {"pozice + rychlost": 'quad_baseline_4_/00_quad_baseline_4_q.c.rew_5.0',}
                    # "pozice + rychlost + orientace":'quad_neighbor_Rz_4_/00_quad_neighbor_Rz_4_q.c.rew_5.0',
                    # "pozice + orientace":'quad_neighbor_pos_Rz_4_/00_quad_neighbor_pos_Rz_4_q.c.rew_5.0',
                    # "pozice":'quad_neighbor_pos_4_/00_quad_neighbor_pos_4_q.c.rew_5.0'}
+    BASE_PATH = Path('./train_dir/RCI_experiments')
     experiments = {
         "pozice": "pos_4_/00_pos_4_q.c.rew_5.0",
         "pozice + orientace": "pos_Rz_4_/00_pos_Rz_4_q.c.rew_5.0",
         "pozice + rychlost": "pos_vel_4_/00_pos_vel_4_q.c.rew_5.0",
         "pozice + rychlost + orientace": "pos_vel_Rz_4_/00_pos_vel_Rz_4_q.c.rew_5.0",
-        "pozice (8)": "pos_8_/00_pos_8_q.c.rew_5.0",
-        "pozice + orientace (8)": "pos_Rz_8_/00_pos_Rz_8_q.c.rew_5.0",
-        "pozice + rychlost (8)": "pos_vel_8_/00_pos_vel_8_q.c.rew_5.0",
-        "pozice + rychlost + orientace (8)": "pos_vel_Rz_8_/00_pos_vel_Rz_8_q.c.rew_5.0",
+        # "pozice (8)": "pos_8_/00_pos_8_q.c.rew_5.0",
+        # "pozice + orientace (8)": "pos_Rz_8_/00_pos_Rz_8_q.c.rew_5.0",
+        # "pozice + rychlost (8)": "pos_vel_8_/00_pos_vel_8_q.c.rew_5.0",
+        # "pozice + rychlost + orientace (8)": "pos_vel_Rz_8_/00_pos_vel_Rz_8_q.c.rew_5.0",
     }
 
     experiments_data = {}
@@ -28,22 +30,21 @@ def main():
         with open(path/'global_data.p', 'rb') as f:
             data = pickle.load(f)
         experiments_data[name] = data
-    plot_success(experiments_data)
-    plot_collisions(experiments_data)
-    # plot_distances(experiments_data)
+    # plot_success(experiments_data)
+    # plot_collisions(experiments_data)
+    plot_distances(experiments_data)
 
-def plot_distances(data_dict):
+def plot_distances(data_dict, quad_num=8, steps=1500):
     data_entry_name = "distance_to_goal"
     plt.figure(figsize=(10, 6))
     for exp_name, entries in data_dict.items():
         if data_entry_name not in entries:
             print(f"Warning: '{data_entry_name}' not found in experiment '{exp_name}'. Skipping.")
             continue
-
         # Concatenate the list of ndarrays into one 1D array for plotting
         data_list = entries[data_entry_name]
         # combined = np.concatenate(data_list)
-        combined = np.mean(data_list, axis=0)
+        combined = np.mean(data_list[quad_num], axis=0)[:steps]
         # combined = data_list[0]
         plt.plot(combined, label=exp_name)
 

@@ -35,7 +35,7 @@ class QuadrotorDynamics:
     """
 
     def __init__(self, model_params, room_box=None, dynamics_steps_num=1, dim_mode="3D", gravity=GRAV,
-                 dynamics_simplification=False, use_numba=False, dt=1/200):
+                 dynamics_simplification=False, use_numba=False, dt=1/200, rng=None):
         # Pre-set Parameters
         self.dt = dt
         self.use_numba = use_numba
@@ -190,16 +190,21 @@ class QuadrotorDynamics:
 
     # generate a random state (meters, meters/sec, radians/sec)
     @staticmethod
-    def random_state(box, vel_max=15.0, omega_max=2 * np.pi):
+    def random_state(box, vel_max=15.0, omega_max=2 * np.pi, rng=np.random.default_rng()):
         box = np.array(box)
-        pos = np.random.uniform(low=-box, high=box, size=(3,))
+        # pos = np.random.uniform(low=-box, high=box, size=(3,))
+        pos = rng.random.uniform(low=-box, high=box, size=(3,))
 
-        vel = np.random.uniform(low=-vel_max, high=vel_max, size=(3,))
-        vel_magn = np.random.uniform(low=0., high=vel_max)
+        # vel = np.random.uniform(low=-vel_max, high=vel_max, size=(3,))
+        vel = rng.random.uniform(low=-vel_max, high=vel_max, size=(3,))
+        # vel_magn = np.random.uniform(low=0., high=vel_max)
+        vel_magn = rng.random.uniform(low=0., high=vel_max)
         vel = vel_magn / (np.linalg.norm(vel) + EPS) * vel
 
-        omega = np.random.uniform(low=-omega_max, high=omega_max, size=(3,))
-        omega_magn = np.random.uniform(low=0., high=omega_max)
+        # omega = np.random.uniform(low=-omega_max, high=omega_max, size=(3,))
+        omega = rng.random.uniform(low=-omega_max, high=omega_max, size=(3,))
+        # omega_magn = np.random.uniform(low=0., high=omega_max)
+        omega_magn = rng.random.uniform(low=0., high=omega_max)
         omega = omega_magn / (np.linalg.norm(omega) + EPS) * omega
 
         rot = rand_uniform_rot3d()

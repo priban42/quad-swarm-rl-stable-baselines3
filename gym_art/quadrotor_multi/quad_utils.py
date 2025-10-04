@@ -97,8 +97,9 @@ def norm2(x):
 
 
 # uniformly sample from the set of all 3D rotation matrices
-def rand_uniform_rot3d():
-    randunit = lambda: normalize(np.random.normal(size=(3,)))[0]
+def rand_uniform_rot3d(rng=np.random.default_rng()):
+    # randunit = lambda: normalize(np.random.normal(size=(3,)))[0]
+    randunit = lambda: normalize(rng.random.normal(size=(3,)))[0]
     up = randunit()
     fwd = randunit()
     while np.dot(fwd, up) > 0.95:

@@ -102,7 +102,7 @@ class QuadrotorSingle:
                  sim_steps=2, obs_repr="xyz_vxyz_R_omega", ep_time=7, room_dims=(10.0, 10.0, 10.0),
                  init_random_state=False, sense_noise=None, verbose=False, gravity=GRAV,
                  t2w_std=0.005, t2t_std=0.0005, excite=False, dynamics_simplification=False, use_numba=False,
-                 neighbor_obs_type='none', num_agents=1, num_use_neighbor_obs=0, use_obstacles=False):
+                 neighbor_obs_type='none', num_agents=1, num_use_neighbor_obs=0, use_obstacles=False, rng=None):
         np.seterr(under='ignore')
         """
         Args:
@@ -147,7 +147,7 @@ class QuadrotorSingle:
                                   [self.room_length / 2., self.room_width / 2., self.room_height]])
 
         self.init_random_state = init_random_state
-
+        self.rng = rng
         # Preset parameters
         self.obs_repr = obs_repr
         self.rew_coeff = None
@@ -254,7 +254,7 @@ class QuadrotorSingle:
                                           dynamics_steps_num=self.sim_steps, room_box=self.room_box,
                                           dim_mode=self.dim_mode, gravity=self.gravity,
                                           dynamics_simplification=self.dynamics_simplification,
-                                          use_numba=self.use_numba, dt=self.dt)
+                                          use_numba=self.use_numba, dt=self.dt, rng=self.rng)
 
         # CONTROL
         if self.raw_control:
@@ -405,7 +405,8 @@ class QuadrotorSingle:
 
         if self.box < 10:
             self.box = self.box * self.box_scale
-        x, y, z = self.np_random.uniform(-self.box, self.box, size=(3,)) + self.spawn_point
+        # x, y, z = self.np_random.uniform(-self.box, self.box, size=(3,)) + self.spawn_point
+        x, y, z = self.rng.uniform(-self.box, self.box, size=(3,)) + self.spawn_point
 
         if self.dim_mode == '1D':
             x, y = self.goal[0], self.goal[1]
@@ -421,19 +422,26 @@ class QuadrotorSingle:
         if self.init_random_state:
             if self.dim_mode == '1D':
                 omega, rotation = np.zeros(3, dtype=np.float64), np.eye(3)
-                vel = np.array([0, 0, self.max_init_vel * np.random.rand()])
+                # vel = np.array([0, 0, self.max_init_vel * np.random.rand()])
+                vel = np.array([0, 0, self.max_init_vel * self.rng.random.rand()])
             elif self.dim_mode == '2D':
-                omega = npa(0, self.max_init_omega * np.random.rand(), 0)
+                # omega = npa(0, self.max_init_omega * np.random.rand(), 0)
+                omega = npa(0, self.max_init_omega * self.rng.random.rand(), 0)
                 vel = self.max_init_vel * np.random.rand(3)
                 vel[1] = 0.
-                theta = np.pi * np.random.rand()
+                # theta = np.pi * np.random.rand()
+                theta = np.pi * self.rng.random.rand()
                 c, s = np.cos(theta), np.sin(theta)
                 rotation = np.array(((c, 0, -s), (0, 1, 0), (s, 0, c)))
             else:
                 # It already sets the state internally
+                # _, vel, rotation, omega = self.dynamics.random_state(
+                #     box=(self.room_length, self.room_width, self.room_height), vel_max=self.max_init_vel,
+                #     omega_max=self.max_init_omega
+                # )
                 _, vel, rotation, omega = self.dynamics.random_state(
                     box=(self.room_length, self.room_width, self.room_height), vel_max=self.max_init_vel,
-                    omega_max=self.max_init_omega
+                    omega_max=self.max_init_omega, rng=self.rng
                 )
         else:
             # INIT HORIZONTALLY WITH 0 VEL and OMEGA
