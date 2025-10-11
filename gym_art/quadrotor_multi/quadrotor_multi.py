@@ -285,7 +285,7 @@ class QuadrotorEnvMulti(gym.Env):
             pos_rel = pos_neighbor - cur_pos
             for p in pos_rel:
                 length = np.linalg.norm(p)
-                cov = np.diag([0.001 * length, 0.001 * length, 0.01 * length])
+                cov = np.diag([0.002 * length, 0.002 * length, 0.02 * length])
                 p_noise = np.random.multivariate_normal(np.array([0, 0, 0]), cov)
                 cross = np.cross(np.array([0, 0, 1]), p[:3])
                 angle = np.arccos(np.dot(np.array([0, 0, 1]), p[:3]) / (
