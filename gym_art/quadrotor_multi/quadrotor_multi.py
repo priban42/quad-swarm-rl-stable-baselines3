@@ -216,9 +216,9 @@ class QuadrotorEnvMulti(gym.Env):
 
         # Log pribavoj
         self.test_logs = False
-        if "test" in cfg:
-            if cfg["test"]:
-                self.test_logs = True
+        # if "test" in cfg:
+        #     if cfg["test"]:
+        #         self.test_logs = True
         self.metric_dist_to_goal = [[] for _ in range(len(self.envs))]
         self.all_colisions_per_episode = []
 
@@ -452,10 +452,11 @@ class QuadrotorEnvMulti(gym.Env):
             self.scenario.reset(obst_map=self.obst_map, cell_centers=cell_centers, mode_index=self.rng.integers(0, 100))
         else:
             # self.scenario.reset(mode_index=self.rng.integers(0, 100))
-            if "mode_index" in self.cfg:
-                self.scenario.reset(mode_index=self.cfg["mode_index"])
-            else:
-                self.scenario.reset()
+            # if "mode_index" in self.cfg:
+            #     self.scenario.reset(mode_index=self.cfg["mode_index"])
+            # else:
+            #     self.scenario.reset()
+            self.scenario.reset()
 
         # Replay buffer
         if self.use_replay_buffer and not self.activate_replay_buffer:
@@ -513,12 +514,13 @@ class QuadrotorEnvMulti(gym.Env):
             self.quads_formation_size = self.scenario.formation_size
             self.all_collisions = {val: [0.0 for _ in range(len(self.envs))] for val in ['drone', 'ground', 'obstacle']}
 
-        return obs
+        return obs[0], {}
+        # return obs
 
     def step(self, actions):
         obs, rewards, dones, infos = [], [], [], []
 
-        for i, a in enumerate(actions):
+        for i, a in enumerate(np.atleast_2d(actions)):
             self.envs[i].rew_coeff = self.rew_coeff
 
             observation, reward, done, info = self.envs[i].step(a)
@@ -833,8 +835,8 @@ class QuadrotorEnvMulti(gym.Env):
             obs = self.reset()
             # terminate the episode for all "sub-envs"
             dones = [True] * len(dones)
-
-        return obs, rewards, dones, infos
+        return obs[0], rewards[0], dones[0], dones[0], infos[0]
+        # return obs, rewards, dones, infos
 
     def render(self, verbose=False):
         if not self.quads_render:
