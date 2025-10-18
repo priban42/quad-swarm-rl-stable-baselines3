@@ -8,29 +8,21 @@ import argparse
 import os
 from stable_baselines3 import PPO, SAC
 from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecMonitor
+from swarm_rl.env_wrappers.subproc_vec_env_custom import SubprocVecEnvCustom
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.env_util import make_vec_env
+from swarm_rl.env_wrappers.MetaQuadFactory import MetaQuadFactory
+from gym_art.quadrotor_multi.quadrotor_instance import QuadrotorEnvInstance
 
 # from swarm_rl.env_wrappers.quad_utils import make_quadrotor_env
 from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv
 
-def make_env_fn(rank, seed=0):
-    """
-    Utility to create multiple parallel environments.
-    """
-    def _init():
-        env = SB3QuadrotorEnv()
-        # env.seed(seed + rank)
-        return env
-    return _init
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_envs", type=int, default=8)
+    parser.add_argument("--num_envs", type=int, default=4)
     parser.add_argument("--total_timesteps", type=int, default=10_000_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--logdir", type=str, default="./AOC")
+    parser.add_argument("--logdir", type=str, default="./PPO_new")
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
     parser.add_argument("--algo", type=str, default="ppo", choices=["ppo", "a2c", "sac"])
     parser.add_argument("--eval_freq", type=int, default=50_000)
@@ -40,40 +32,52 @@ def parse_args():
 
 def main():
     args = parse_args()
+    num_of_agents = 2
+
+    def make_env_fn(rank, seed=0):
+        def _init():
+            env = SB3QuadrotorEnv(num_agents=num_of_agents)
+            return env
+        return _init
 
     # 1. Create parallel vectorized environment
-    env = SubprocVecEnv([make_env_fn(i) for i in range(args.num_envs)])
-    eval_env = SB3QuadrotorEnv()
+    # meta_quad_factory = MetaQuadFactory()
+    # meta_quad_factory.initialize()
+    # env = DummyVecEnv([make_env_fn(i) for i in range(args.num_envs*meta_quad_factory.num_agents)])
+    # eval_env = DummyVecEnv([make_env_fn(i) for i in range(1*meta_quad_factory.num_agents)])
+
+    env = SubprocVecEnvCustom([make_env_fn(i) for i in range(args.num_envs*num_of_agents)], agents_per_env=num_of_agents)
+    eval_env = SubprocVecEnvCustom([make_env_fn(i) for i in range(1*num_of_agents)], agents_per_env=num_of_agents)
 
     # 2. Choose algorithm (here PPO)
-    # model = PPO(
-    #     "MlpPolicy",
-    #     env,
-    #     learning_rate=args.learning_rate,
-    #     n_steps=256,
-    #     batch_size=2048,
-    #     n_epochs=10,
-    #     gamma=0.99,
-    #     gae_lambda=1.0,
-    #     clip_range=5.0,
-    #     verbose=1,
-    #     tensorboard_log=os.path.join(args.logdir, "tb"),
-    #     device='cpu'
-    # )
-
-    model = SAC(
+    model = PPO(
         "MlpPolicy",
         env,
         learning_rate=args.learning_rate,
-        buffer_size=1_000_000,  # replay buffer size
-        batch_size=256,  # mini-batch size for updates
-        gamma=0.99,  # discount factor
-        tau=0.005,  # target smoothing coefficient
-        ent_coef='auto',  # automatic entropy coefficient
+        n_steps=256,
+        batch_size=2048,
+        n_epochs=10,
+        gamma=0.99,
+        gae_lambda=1.0,
+        clip_range=5.0,
         verbose=1,
         tensorboard_log=os.path.join(args.logdir, "tb"),
         device='cpu'
     )
+
+    # model = SAC(
+    #     "MlpPolicy",
+    #     env,
+    #     learning_rate=args.learning_rate,
+    #     buffer_size=1_000_000,  # replay buffer size
+    #     batch_size=256,  # mini-batch size for updates
+    #     gamma=0.99,  # discount factor
+    #     tau=0.005,  # target smoothing coefficient
+    #     ent_coef='auto',  # automatic entropy coefficient
+    #     verbose=1,
+    #     tensorboard_log=os.path.join(args.logdir, "tb"),
+    #     device='cpu'
+    # )
 
     # 3. Add callbacks for checkpointing and evaluation
     checkpoint_callback = CheckpointCallback(

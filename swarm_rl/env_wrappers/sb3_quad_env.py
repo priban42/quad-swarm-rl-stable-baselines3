@@ -6,13 +6,14 @@ from gym_art.quadrotor_multi.quad_experience_replay import ExperienceReplayWrapp
 from swarm_rl.env_wrappers.reward_shaping import DEFAULT_QUAD_REWARD_SHAPING, QuadsRewardShapingWrapper
 from swarm_rl.env_wrappers.v_value_map import V_ValueMapWrapper
 from swarm_rl.env_wrappers.compatibility import QuadEnvCompatibility
+from swarm_rl.env_wrappers.MetaQuadFactory import MetaQuadFactory
 
 class DummyCfg:
     """Minimal config mock to satisfy QuadrotorEnvMulti requirements."""
     def __init__(self, seed=0):
         self.seed = seed
         # Add other expected fields with reasonable defaults
-        self.num_envs = 1
+        self.num_envs = 4
         self.device = "cpu"
         self.train_dir = "./sb_train_dir"
 
@@ -27,7 +28,7 @@ class SB3QuadrotorEnv(gym.Env):
         num_agents=1,
         episode_duration=15.0,
         obs_repr="xyz_vxyz_R_omega",
-        neighbor_visible_num=0,
+        neighbor_visible_num=-1,
         neighbor_obs_type="pos",
         collision_hitbox_radius=2.0,
         collision_falloff_radius=4.0,
@@ -49,6 +50,7 @@ class SB3QuadrotorEnv(gym.Env):
         quads_render=False,
         **kwargs
     ):
+
         self.env = self._make_env(
             num_agents, episode_duration, obs_repr, neighbor_visible_num, neighbor_obs_type,
             collision_hitbox_radius, collision_falloff_radius,
@@ -162,8 +164,8 @@ class SB3QuadrotorEnv(gym.Env):
         return obs, info
 
     def step(self, action):
-        obs, reward, terminated, truncated, info = self.env.step(action)
-        return obs, reward, terminated, truncated, info
+        obs, reward, terminated, info = self.env.step(action)
+        return obs, reward, terminated, info
 
     def render(self):
         return self.env.render()

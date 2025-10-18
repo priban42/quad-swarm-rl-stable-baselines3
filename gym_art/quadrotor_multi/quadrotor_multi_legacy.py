@@ -513,7 +513,7 @@ class QuadrotorEnvMulti(gym.Env):
             self.quads_formation_size = self.scenario.formation_size
             self.all_collisions = {val: [0.0 for _ in range(len(self.envs))] for val in ['drone', 'ground', 'obstacle']}
 
-        return obs, {}
+        return obs[0], {}
         # return obs
 
     def step(self, actions):
@@ -834,8 +834,8 @@ class QuadrotorEnvMulti(gym.Env):
             obs = self.reset()
             # terminate the episode for all "sub-envs"
             dones = [True] * len(dones)
-        # return obs, rewards, dones, dones, infos
-        return obs, rewards, dones, infos
+        return obs[0], rewards[0], dones[0], dones[0], infos[0]
+        # return obs, rewards, dones, infos
 
     def render(self, verbose=False):
         if not self.quads_render:
