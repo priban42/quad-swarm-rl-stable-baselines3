@@ -165,7 +165,8 @@ class SB3QuadrotorEnv(gym.Env):
 
     def step(self, action):
         obs, reward, terminated, info = self.env.step(action)
-        return obs, reward, terminated, info
+        # return obs, reward, terminated, info  # custom vec env
+        return obs, reward, terminated, terminated, info  # vec env
 
     def render(self):
         return self.env.render()

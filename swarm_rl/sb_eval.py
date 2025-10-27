@@ -9,8 +9,8 @@ from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv  # your env wrapp
 # Configuration
 # ----------------------------
 # MODEL_PATH = "PPO/best_model/best_model.zip"  # path to your trained model
-MODEL_PATH = "PPO/final_model.zip"  # path to your trained model
-NUM_EPISODES = 5
+MODEL_PATH = "PPO_4/best_model/best_model.zip"  # path to your trained model
+NUM_EPISODES = 1
 MAX_FRAMES = 1000  # maximum frames per episode
 VIDEO_PATH = "quad_test.mp4"
 FPS = 30
@@ -18,12 +18,13 @@ FPS = 30
 # ----------------------------
 # Create environment
 # ----------------------------
-env = SB3QuadrotorEnv(quads_render=True)  # render enabled
+num_of_agents = 4
+env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents)  # render enabled
 
 # ----------------------------
 # Load trained model
 # ----------------------------
-model = PPO.load(MODEL_PATH, env=env, device="cpu")  # can switch to "cuda" if needed
+model = PPO.load(MODEL_PATH, env=env, device="cpu")
 
 # ----------------------------
 # Get frame size from first render
@@ -47,10 +48,10 @@ for episode in range(NUM_EPISODES):
     episode_reward = 0.0
     frame_count = 0
 
-    while not (terminated or truncated) and frame_count < MAX_FRAMES:
+    while frame_count < MAX_FRAMES:
         action, _states = model.predict(obs, deterministic=True)
         obs, reward, terminated, truncated, info = env.step(action)
-        episode_reward += reward
+        episode_reward += np.array(reward).sum()
 
         # Render and save frame
         frame = env.render()  # ensure we get an image array
