@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
     parser.add_argument("--algo", type=str, default="ppo", choices=["ppo", "a2c", "sac"])
     parser.add_argument("--eval_freq", type=int, default=100_000)
-    parser.add_argument("--eval_episodes", type=int, default=5)
+    parser.add_argument("--eval_episodes", type=int, default=10)
     return parser.parse_args()
 
 
@@ -104,12 +104,12 @@ def main():
         env=env,
         # policy_kwargs=policy_kwargs,
         learning_rate=args.learning_rate,
-        n_steps=128,
+        n_steps=128,  # rollout
         batch_size=1024,
         n_epochs=10,
         gamma=0.99,
-        gae_lambda=1.0,
-        clip_range=5.0,
+        # gae_lambda=1.0,
+        # clip_range=5.0,
         verbose=1,
         tensorboard_log=os.path.join(args.logdir, "tb"),
         device='cuda'

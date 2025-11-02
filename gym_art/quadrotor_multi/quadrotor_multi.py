@@ -5,6 +5,7 @@ from copy import deepcopy
 
 import gymnasium as gym
 import numpy as np
+import cv2
 
 from gym_art.quadrotor_multi.aerodynamics.downwash import perform_downwash
 from gym_art.quadrotor_multi.collisions.obstacles import perform_collision_with_obstacle
@@ -928,6 +929,10 @@ class QuadrotorEnvMulti(gym.Env):
         self.simulation_start_time = time.time()
 
         if self.render_mode == "rgb_array":
+            # self.pos
+            text = f"pos:{self.pos[0][0]:.3f}, {self.pos[0][1]:.3f}, {self.pos[0][2]:.3f}"
+            frame = np.ascontiguousarray(frame)
+            cv2.putText(frame, text, (10, 410), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2)
             return frame
 
     def __deepcopy__(self, memo):

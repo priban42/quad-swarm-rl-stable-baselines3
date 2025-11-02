@@ -28,16 +28,20 @@ from sample_factory.model.action_parameterization import (
     ActionParameterizationDefault,
 )
 from sample_factory.algo.utils.action_distributions import is_continuous_action_space, sample_actions_log_probs
-
+from sample_factory.utils.normalize import ObservationNormalizer
 
 @dataclass
 class QuadrotorEnvConfig:
     # Quadrotor features
 
+    learning_rate = 0.0001
+    normalize_input = False
+
     decoder_mlp_layers=[]
     adaptive_stddev = False
     initial_stddev = 1.0
-    continuous_tanh_scale = 0.0
+    continuous_tanh_scale = 1.0
+
     policy_init_gain = 1.0
     nonlinearity = 'tanh'
     encoder_type = 'mlp'
@@ -60,7 +64,7 @@ class QuadrotorEnvConfig:
     # Neighbor Collision Reward
     quads_collision_reward: float = 0.0
     quads_collision_hitbox_radius: float = 2.0
-    quads_collision_falloff_radius: float = -1.0
+    quads_collision_falloff_radius: float = 4.0
     quads_collision_smooth_max_penalty: float = 10.0
 
     # Obstacle
@@ -91,16 +95,16 @@ class QuadrotorEnvConfig:
     quads_use_numba: bool = False
 
     # Scenarios
-    quads_mode: str = 'static_same_goal'
+    quads_mode: str = 'mix'
 
     # Room
     quads_room_dims: List[float] = field(default_factory=lambda: [10.0, 10.0, 10.0])
 
     # Replay Buffer
-    replay_buffer_sample_prob: float = 0.0
+    replay_buffer_sample_prob: float = 0.75
 
     # Annealing
-    anneal_collision_steps: float = 0.0
+    anneal_collision_steps: float = 300000000
 
     # Rendering
     quads_view_mode: List[str] = field(default_factory=lambda: ['topdown', 'chase', 'global'])
@@ -262,6 +266,8 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         self.critic_core = ModelCoreIdentity(self.cfg, self.critic_encoder.get_out_size())
         self.critic_decoder = MlpDecoder(self.cfg, self.critic_core.get_out_size())
 
+        # self.obs_normalizer: ObservationNormalizer = ObservationNormalizer(observation_space, self.cfg)
+
         self.action_parameterization = self.get_action_parameterization(self.critic_decoder.get_out_size())
 
         # Critic head
@@ -307,6 +313,10 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         #     all_params += list(self.critic_encoder.obstacle_encoder.parameters(recurse=True))
         # all_params += list(self.critic_encoder.parameters())  # or whatever internal module they wrap
         all_params += list(self.critic_decoder.mlp.parameters())
+
+        # all_params += self.action_parameterization.learned_stddev
+        all_params += self.action_parameterization.distribution_linear.parameters()
+
         return all_params
 
     def _initialize_all_weights(self):
@@ -330,6 +340,7 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         #     self.initialize_weights(self.critic_encoder.obstacle_encoder)
         self.initialize_weights(self.critic_decoder.mlp)
         self.initialize_weights(self.value_net)
+        self.initialize_weights(self.action_parameterization.distribution_linear)
 
     def initialize_weights(self, layer):
         # gain = nn.init.calculate_gain(self.cfg.nonlinearity)
@@ -367,7 +378,9 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
             obs_dict = {'obs': casted_obs}
         else:
             obs_dict = casted_obs
+        # normalized_obs_dict = self.obs_normalizer(obs_dict)
         return obs_dict
+        # return normalized_obs_dict
 
     def _predict(self, obs: torch.Tensor, deterministic=False) -> Tuple[torch.Tensor, torch.Tensor]:
         """Get the action according to the policy for a given observation."""
@@ -383,7 +396,7 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
             return actions
 
         actions, log_prob = sample_actions_log_probs(self.last_action_distribution)
-        actions = torch.tanh(actions)
+        # actions = torch.tanh(actions)
         return actions
 
     def extract_features(self, obs, features_extractor = None):
@@ -407,7 +420,8 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
         actions, log_prob = sample_actions_log_probs(self.last_action_distribution)
         values = self.value_net(critic_decoder_output)
-        actions = torch.tanh(actions)
+        # self.action_parameterization.learned_stddev -= 0.00001
+        # actions = torch.tanh(actions)
         return actions, values, log_prob
 
     def evaluate_actions(self, obs: torch.Tensor, actions: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -427,9 +441,9 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
 
         action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
 
-        unsquashed = torch.atanh(actions.clamp(-0.999999, 0.999999))
-        log_prob = self.last_action_distribution.log_prob(unsquashed)
-        log_prob -= torch.sum(torch.log(1 - actions.pow(2) + 1e-6), dim=-1)
+        # unsquashed = torch.atanh(actions.clamp(-0.999999, 0.999999))
+        log_prob = self.last_action_distribution.log_prob(actions)
+        # log_prob -= torch.sum(torch.log(1 - actions.pow(2) + 1e-6), dim=-1)
         entropy = self.last_action_distribution.entropy()
         return values, log_prob, entropy
 
@@ -442,72 +456,25 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         values = self.value_net(critic_decoder_output)
         return values
 
-# import torch
-# import torch.nn as nn
-# from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-# from swarm_rl.models.quad_multi_model import QuadMultiHeadAttentionEncoder, QuadMultiEncoder
-# from stable_baselines3.common.policies import ActorCriticCnnPolicy, ActorCriticPolicy, BasePolicy, MultiInputActorCriticPolicy
-# from torch import Tensor, nn
-# from typing import Dict, Optional
+
+# class ActorCriticPolicyCustomSimple(ActorCriticPolicy):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs,
+#                          features_extractor_class=CustomEncoder,
+#                          features_extractor_kwargs=dict(features_dim=128))
 #
-# from sample_factory.model.actor_critic import ActorCritic, default_make_actor_critic_func
-# from sample_factory.model.core import ModelCore, default_make_core_func
-# from sample_factory.model.decoder import Decoder, default_make_decoder_func
-# from sample_factory.model.encoder import Encoder, default_make_encoder_func
-# from sample_factory.model.core import ModelCoreIdentity
-# from sample_factory.model.decoder import MlpDecoder
-# from sample_factory.utils.typing import ActionSpace, Config, ObsSpace
-# from sample_factory.utils.utils import log
-# from sample_factory.algo.utils.tensor_dict import TensorDict
-# from stable_baselines3.common.distributions import make_proba_distribution
+#         # Replace the default MLP heads with your own decoder
+#         self.actor = nn.Sequential(
+#             nn.Linear(self.features_dim, 256),
+#             nn.ReLU(),
+#             nn.Linear(256, self.action_space.shape[0])
+#         )
+#         self.critic = nn.Sequential(
+#             nn.Linear(self.features_dim, 256),
+#             nn.ReLU(),
+#             nn.Linear(256, 1)
+#         )
 #
-# class ActorCriticPolicyCustom(ActorCriticPolicy):
-#     def __init__(self, observation_space, action_space, lr_schedule, cfg: Config, **kwargs):
-#         super().__init__(observation_space, action_space, lr_schedule, **kwargs)
-#
-#         self.encoder = QuadMultiEncoder(cfg, observation_space)
-#         self.encoders = [self.encoder]
-#         self.core = ModelCoreIdentity(cfg, self.encoder.get_out_size())
-#         self.decoder = MlpDecoder(cfg, self.encoder.get_out_size())
-#         decoder_out_size: int = self.decoder.get_out_size()
-#
-#         self.value_net = nn.Linear(self.decoder.get_out_size(), 1)
-#         self.dist = make_proba_distribution(action_space)
-#
-#         # Store the encoder’s true output size (SB3 will use it internally)
-#         # self._features_dim = self.encoder.get_out_size()
-#         # self.encoder_output_size = 2 * cfg.rnn_size
-#         self._features_dim = 2 * cfg.rnn_size
-#
-#     def forward_head(self, normalized_obs_dict: Dict[str, Tensor]) -> Tensor:
-#         x = self.encoder(normalized_obs_dict)
-#         return x
-#
-#     def forward_core(self, head_output: Tensor, rnn_states):
-#         x, new_rnn_states = self.core(head_output, rnn_states)
-#         return x, new_rnn_states
-#
-#     def forward_tail(self, core_output, values_only: bool, sample_actions: bool) -> TensorDict:
-#         decoder_output = self.decoder(core_output)
-#         values = self.critic_linear(decoder_output).squeeze()
-#
-#         result = TensorDict(values=values)
-#         if values_only:
-#             return result
-#
-#         action_distribution_params, self.last_action_distribution = self.action_parameterization(decoder_output)
-#
-#         # `action_logits` is not the best name here, better would be "action distribution parameters"
-#         result["action_logits"] = action_distribution_params
-#
-#         self._maybe_sample_actions(sample_actions, result)
-#         return result
-#
-#     def forward(self, normalized_obs_dict, rnn_states, values_only=False) -> TensorDict:
-#         x = self.forward_head(normalized_obs_dict)
-#         x, new_rnn_states = self.forward_core(x, rnn_states)
-#         result = self.forward_tail(x, values_only, sample_actions=True)
-#         result["new_rnn_states"] = new_rnn_states
-#         return result
-#
-#
+#         # Reinitialize parameters
+#         self._initialize_weights(self.actor)
+#         self._initialize_weights(self.critic)

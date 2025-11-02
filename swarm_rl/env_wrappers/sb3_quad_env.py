@@ -17,6 +17,12 @@ class DummyCfg:
         self.device = "cpu"
         self.train_dir = "./sb_train_dir"
 
+class AnnealSchedule:
+    def __init__(self, coeff_name, final_value, anneal_env_steps):
+        self.coeff_name = coeff_name
+        self.final_value = final_value
+        self.anneal_env_steps = anneal_env_steps
+
 class SB3QuadrotorEnv(gym.Env):
     """
     SB3-compatible quadrotor swarm environment builder.
@@ -97,7 +103,7 @@ class SB3QuadrotorEnv(gym.Env):
         rew_coeff = DEFAULT_QUAD_REWARD_SHAPING["quad_rewards"]
 
         env = QuadrotorEnvMulti(
-            cfg=DummyCfg(seed=0),  # unused in this context, but required by constructor
+            cfg=DummyCfg(seed=1),  # unused in this context, but required by constructor
             num_agents=num_agents,
             ep_time=episode_duration,
             rew_coeff=rew_coeff,
@@ -131,6 +137,29 @@ class SB3QuadrotorEnv(gym.Env):
         # --- 2. Optional wrappers (same as before) ---
         if use_replay_buffer:
             env = ExperienceReplayWrapper(env, 0.5, obst_density, obst_size, False, False, False, 0, 1, 0.1, 1.0)
+
+        reward_shaping = copy.deepcopy(DEFAULT_QUAD_REWARD_SHAPING)
+
+        reward_shaping['quad_rewards']['quadcol_bin'] = quads_collision_reward
+        reward_shaping['quad_rewards']['quadcol_bin_smooth_max'] = quads_collision_smooth_max_penalty
+        reward_shaping['quad_rewards']['quadcol_bin_obst'] = quads_obst_collision_reward
+
+        # this is annealed by the reward shaping wrapper
+        if anneal_collision_steps > 0:
+            reward_shaping['quad_rewards']['quadcol_bin'] = 0.0
+            reward_shaping['quad_rewards']['quadcol_bin_smooth_max'] = 0.0
+            reward_shaping['quad_rewards']['quadcol_bin_obst'] = 0.0
+            annealing = [
+                AnnealSchedule('quadcol_bin', quads_collision_reward, anneal_collision_steps),
+                AnnealSchedule('quadcol_bin_smooth_max', quads_collision_smooth_max_penalty,
+                               anneal_collision_steps),
+                AnnealSchedule('quadcol_bin_obst', quads_obst_collision_reward, anneal_collision_steps),
+            ]
+        else:
+            annealing = None
+
+        env = QuadsRewardShapingWrapper(env, reward_shaping_scheme=reward_shaping, annealing=annealing,
+                                        with_pbt=False)
 
         # reward_shaping = copy.deepcopy(DEFAULT_QUAD_REWARD_SHAPING)
         # reward_shaping["quad_rewards"].update({
