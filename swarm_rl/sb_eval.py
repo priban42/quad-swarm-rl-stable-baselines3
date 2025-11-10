@@ -19,7 +19,8 @@ FPS = 30
 # Create environment
 # ----------------------------
 num_of_agents = 4
-env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")  # render enabled
+# env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
+env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
 
 # ----------------------------
 # Load trained model

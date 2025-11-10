@@ -1,8 +1,9 @@
+import numpy as np
 import torch
 import torch.nn as nn
 from typing import Dict, Tuple, Optional, Any
 from stable_baselines3.common.policies import ActorCriticPolicy
-from stable_baselines3.common.distributions import make_proba_distribution
+from stable_baselines3.common.distributions import make_proba_distribution, SquashedDiagGaussianDistribution
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 from swarm_rl.models.quad_multi_model import QuadMultiEncoder
@@ -173,6 +174,7 @@ class ActorCriticPolicyCustomSharedWeights(ActorCriticPolicy):
         if type(layer) == nn.Conv2d or type(layer) == nn.Linear:
             nn.init.xavier_uniform_(layer.weight.data, gain=gain)
 
+
     def get_action_parameterization(self, decoder_output_size: int):
         # action_parameterization = ActionParameterizationDefault(self.cfg, decoder_output_size, self.action_space)
         action_parameterization = ActionParameterizationContinuousNonAdaptiveStddev(
@@ -268,7 +270,22 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
 
         # self.obs_normalizer: ObservationNormalizer = ObservationNormalizer(observation_space, self.cfg)
 
-        self.action_parameterization = self.get_action_parameterization(self.critic_decoder.get_out_size())
+        self.log_std_init = 0.0
+        use_sde = False
+        dist_kwargs = None
+        if use_sde:
+            dist_kwargs = {
+                "full_std": True,
+                "squash_output": False,
+                "use_expln": False,
+                "learn_features": False,
+            }
+        self.use_sde = use_sde
+        self.dist_kwargs = dist_kwargs
+        # self.action_dist = make_proba_distribution(action_space, use_sde=use_sde, dist_kwargs=dist_kwargs)
+        self.action_dist = SquashedDiagGaussianDistribution(int(np.prod(action_space.shape)), **{})
+        self.action_net, self.log_std = self.action_dist.proba_distribution_net(latent_dim=self.actor_decoder.get_out_size(), log_std_init=self.log_std_init)
+        # self.action_parameterization = self.get_action_parameterization(self.critic_decoder.get_out_size())
 
         # Critic head
         self.value_net = nn.Linear(self.critic_decoder.get_out_size(), 1)
@@ -315,7 +332,10 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         all_params += list(self.critic_decoder.mlp.parameters())
 
         # all_params += self.action_parameterization.learned_stddev
-        all_params += self.action_parameterization.distribution_linear.parameters()
+        # all_params += self.action_parameterization.distribution_linear.parameters()
+        all_params += self.action_net.parameters()
+        all_params.append(self.log_std)
+        # all_params += nn.Parameter(torch.ones(4) * 1)
 
         return all_params
 
@@ -340,13 +360,40 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         #     self.initialize_weights(self.critic_encoder.obstacle_encoder)
         self.initialize_weights(self.critic_decoder.mlp)
         self.initialize_weights(self.value_net)
-        self.initialize_weights(self.action_parameterization.distribution_linear)
+        # self.initialize_weights(self.action_parameterization.distribution_linear)
+        self.initialize_weights(self.action_net)
 
     def initialize_weights(self, layer):
         # gain = nn.init.calculate_gain(self.cfg.nonlinearity)
         gain = self.cfg.policy_init_gain
         if type(layer) == nn.Conv2d or type(layer) == nn.Linear:
             nn.init.xavier_uniform_(layer.weight.data, gain=gain)
+
+    def _get_action_dist_from_latent(self, latent_pi: torch.Tensor) -> Distribution:
+        """
+        Retrieve action distribution given the latent codes.
+
+        :param latent_pi: Latent code for the actor
+        :return: Action distribution
+        """
+        mean_actions = self.action_net(latent_pi)
+        if isinstance(self.action_dist, SquashedDiagGaussianDistribution):
+            return self.action_dist.proba_distribution(mean_actions, self.log_std)
+        if isinstance(self.action_dist, DiagGaussianDistribution):
+            return self.action_dist.proba_distribution(mean_actions, self.log_std)
+        elif isinstance(self.action_dist, CategoricalDistribution):
+            # Here mean_actions are the logits before the softmax
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, MultiCategoricalDistribution):
+            # Here mean_actions are the flattened logits
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, BernoulliDistribution):
+            # Here mean_actions are the logits (before rounding to get the binary actions)
+            return self.action_dist.proba_distribution(action_logits=mean_actions)
+        elif isinstance(self.action_dist, StateDependentNoiseDistribution):
+            return self.action_dist.proba_distribution(mean_actions, self.log_std, latent_pi)
+        else:
+            raise ValueError("Invalid action distribution")
 
     def get_action_parameterization(self, decoder_output_size: int):
         # action_parameterization = ActionParameterizationDefault(self.cfg, decoder_output_size, self.action_space)
@@ -389,13 +436,16 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         latent_pi, _ =self.actor_core(actor_features, None)
         actor_decoder_output = self.actor_decoder(latent_pi)
 
-        action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
-        if deterministic:
-            actions = self.last_action_distribution.mean
-            actions = torch.tanh(actions)
-            return actions
-
-        actions, log_prob = sample_actions_log_probs(self.last_action_distribution)
+        # action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
+        # if deterministic:
+        #     actions = self.last_action_distribution.mean
+        #     actions = torch.tanh(actions)
+        #     return actions
+        #
+        # actions, log_prob = sample_actions_log_probs(self.last_action_distribution)
+        distribution = self._get_action_dist_from_latent(actor_decoder_output)
+        actions = distribution.get_actions(deterministic=deterministic)
+        # log_prob = distribution.log_prob(actions)
         # actions = torch.tanh(actions)
         return actions
 
@@ -417,8 +467,12 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         actor_decoder_output = self.actor_decoder(latent_pi)
         critic_decoder_output = self.critic_decoder(latent_vf)
 
-        action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
-        actions, log_prob = sample_actions_log_probs(self.last_action_distribution)
+        # action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
+        # actions, log_prob = sample_actions_log_probs(self.last_action_distribution)
+        distribution = self._get_action_dist_from_latent(actor_decoder_output)
+        actions = distribution.get_actions(deterministic=deterministic)
+        log_prob = distribution.log_prob(actions)
+
         values = self.value_net(critic_decoder_output)
         # self.action_parameterization.learned_stddev -= 0.00001
         # actions = torch.tanh(actions)
@@ -439,12 +493,15 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
 
         values = self.value_net(critic_decoder_output)
 
-        action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
+        distribution = self._get_action_dist_from_latent(actor_decoder_output)
+        log_prob = distribution.log_prob(actions)
+        entropy = distribution.entropy()
 
+        # action_distribution_params, self.last_action_distribution = self.action_parameterization(actor_decoder_output)
         # unsquashed = torch.atanh(actions.clamp(-0.999999, 0.999999))
-        log_prob = self.last_action_distribution.log_prob(actions)
+        # log_prob = self.last_action_distribution.log_prob(actions)
         # log_prob -= torch.sum(torch.log(1 - actions.pow(2) + 1e-6), dim=-1)
-        entropy = self.last_action_distribution.entropy()
+        # entropy = self.last_action_distribution.entropy()
         return values, log_prob, entropy
 
     def predict_values(self, obs: torch.Tensor) -> torch.Tensor:

@@ -837,6 +837,7 @@ class QuadrotorEnvMulti(gym.Env):
             # terminate the episode for all "sub-envs"
             dones = [True] * len(dones)
         # return obs, rewards, dones, dones, infos
+        self.obs = obs
         return obs, rewards, dones, infos  # custom vec env
         # return obs[0], rewards[0], dones[0], infos[0]  # vec env
 

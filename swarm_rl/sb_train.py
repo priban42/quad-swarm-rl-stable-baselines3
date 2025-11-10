@@ -21,10 +21,10 @@ from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_envs", type=int, default=12)
+    parser.add_argument("--num_envs", type=int, default=48)
     parser.add_argument("--total_timesteps", type=int, default=150_000_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--logdir", type=str, default="./PPO_4")
+    parser.add_argument("--logdir", type=str, default="./PPO_4_nsteps")
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
     parser.add_argument("--algo", type=str, default="ppo", choices=["ppo", "a2c", "sac"])
     parser.add_argument("--eval_freq", type=int, default=100_000)
@@ -87,8 +87,8 @@ def main():
     # env = SubprocVecEnv([make_env_fn(i) for i in range(args.num_envs*num_of_agents)])
     # eval_env = SubprocVecEnv([make_env_fn(i) for i in range(1*num_of_agents)])
 
-    env = SubprocVecEnvCustom([make_env_fn(i) for i in range(args.num_envs*num_of_agents)], agents_per_env=num_of_agents)
-    eval_env = SubprocVecEnvCustom([make_env_fn(i) for i in range(1*num_of_agents)], agents_per_env=num_of_agents)
+    env = SubprocVecEnvCustom([make_env_fn(i) for i in range(args.num_envs)], agents_per_env=num_of_agents)
+    eval_env = SubprocVecEnvCustom([make_env_fn(i) for i in range(1)], agents_per_env=num_of_agents)
 
     policy_kwargs = dict(
         features_extractor_class=QuadEncoderExtractor,
@@ -104,7 +104,7 @@ def main():
         env=env,
         # policy_kwargs=policy_kwargs,
         learning_rate=args.learning_rate,
-        n_steps=128,  # rollout
+        n_steps=512,  # rollout
         batch_size=1024,
         n_epochs=10,
         gamma=0.99,
