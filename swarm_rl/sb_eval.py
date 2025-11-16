@@ -9,7 +9,7 @@ from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv  # your env wrapp
 # Configuration
 # ----------------------------
 # MODEL_PATH = "PPO/best_model/best_model.zip"  # path to your trained model
-MODEL_PATH = "PPO_4/best_model/best_model.zip"  # path to your trained model
+MODEL_PATH = "PPO_4_nsteps/best_model/best_model.zip"  # path to your trained model
 NUM_EPISODES = 1
 MAX_FRAMES = 1000  # maximum frames per episode
 VIDEO_PATH = "quad_test.mp4"
