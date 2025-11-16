@@ -6,34 +6,7 @@ from dataclasses import dataclass
 from Pid import PIDController
 from MultirotorModel import ModelParams
 
-
-# ------------------------------------------------------------
-# reference-type Python equivalents
-# ------------------------------------------------------------
-
-@dataclass
-class AccelerationHdg:
-    acceleration: np.ndarray   # shape (3,)
-    heading: float
-
-
-@dataclass
-class AccelerationHdgRate:
-    acceleration: np.ndarray   # shape (3,)
-    heading_rate: float
-
-
-@dataclass
-class VelocityHdg:
-    velocity: np.ndarray       # shape (3,)
-    heading: float
-
-
-@dataclass
-class VelocityHdgRate:
-    velocity: np.ndarray       # shape (3,)
-    heading_rate: float
-
+from references import *
 
 # ------------------------------------------------------------
 # VelocityController

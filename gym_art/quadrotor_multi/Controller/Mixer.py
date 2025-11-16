@@ -1,30 +1,9 @@
 # mixer.py
 import numpy as np
 from dataclasses import dataclass
-
+from references import ControlGroup, Actuators
 from MultirotorModel import ModelParams   # import the ModelParams from previous translation
 
-
-# --------------------------------------------------------------------
-# Python equivalents of reference::Actuators and reference::ControlGroup
-# --------------------------------------------------------------------
-
-@dataclass
-class Actuators:
-    motors: np.ndarray   # values expected in [0,1]
-
-
-@dataclass
-class ControlGroup:
-    roll: float
-    pitch: float
-    yaw: float
-    throttle: float
-
-
-# --------------------------------------------------------------------
-# Mixer class
-# --------------------------------------------------------------------
 
 class Mixer:
 

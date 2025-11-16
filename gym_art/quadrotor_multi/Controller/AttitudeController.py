@@ -1,6 +1,6 @@
 import numpy as np
 from Pid import PIDController
-from references import Attitude, TiltHdgRate, AttitudeRate
+from references import *
 from MultirotorModel import MultirotorModel, ModelParams, State
 
 
@@ -53,25 +53,14 @@ class AttitudeController:
     # -------------------------------------------------------------------
 
     def get_control_signal(self, state: State,
-                           reference: TiltHdgRate, dt: float) -> AttitudeRate:
+                           reference: Attitude, dt: float) -> AttitudeRate:
         """
         Equivalent of:
           reference::AttitudeRate getControlSignal(
               const State&, const reference::Attitude&, double)
         """
 
-        # orientation error matrix
-        R = state.R
-        # Rd = reference.orientation
-
-        z_des = reference.tilt_vector / np.linalg.norm(reference.tilt_vector)
-        y_des = np.cross(z_des, state.R[:, 0])
-        y_des /= np.linalg.norm(y_des)
-        x_des = np.cross(y_des, z_des)
-        x_des /= np.linalg.norm(x_des)
-        Rd = np.column_stack((x_des, y_des, z_des))
-
-        R_error = 0.5 * (Rd.T @ R - R.T @ Rd)
+        R_error = 0.5*(reference.orientation.T @ state.R - state.R.T@reference.orientation)
 
         # vectorized version
         R_error_vec = np.array([

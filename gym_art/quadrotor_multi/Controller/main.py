@@ -2,6 +2,8 @@ import numpy as np
 from MultirotorModel import MultirotorModel
 from VelocityController import VelocityController, VelocityHdg
 from AttitudeController import AttitudeController
+from AccelerationController import AccelerationController
+from RateController import RateController
 from Mixer import Mixer, ControlGroup
 from DroneVizualizer import DroneVisualizer
 import matplotlib.pyplot as plt
@@ -14,12 +16,14 @@ model = MultirotorModel()
 params = model.get_params()
 
 velocity_controller = VelocityController(params)
+acceleration_controller = AccelerationController(params)
 attitude_controller = AttitudeController(params)
+rate_controller = RateController(params)
 mixer = Mixer(params)
 
 # Target velocity (m/s) in world frame
-reference = VelocityHdg(
-    velocity=np.array([1.0, 0.0, 0.0]),  # fly forward at 1 m/s
+velocity_hdg_cmd = VelocityHdg(
+    velocity=np.array([1.0, 1.0, 1.0]),  # fly forward at 1 m/s
     heading=0.0
 )
 
@@ -40,31 +44,14 @@ for i in range(steps):
 
     # ---------------- Outer loop: velocity control ----------------
     # Compute desired acceleration in world frame
-    acc_cmd = velocity_controller.get_control_signal(state, reference, dt)
+    acceleration_hdg_cmd = velocity_controller.get_control_signal(state, velocity_hdg_cmd, dt)
 
-    # Add gravity compensation
-    accel_desired = acc_cmd.acceleration + np.array([0.0, 0.0, params.g])
+    attitude_cmd = acceleration_controller.get_control_signal(state, acceleration_hdg_cmd, dt)
+    attitude_rate_cmd = attitude_controller.get_control_signal(state, attitude_cmd, dt)
+    control_group_cmd = rate_controller.get_control_signal(state, attitude_rate_cmd, dt)
+    actuators_cmd = mixer.get_control_signal(control_group_cmd)
 
-    # Desired tilt vector (body Z axis points opposite gravity)
-    tilt_vector = accel_desired / np.linalg.norm(accel_desired)
-
-    # Throttle based on total desired thrust
-    throttle_cmd = np.clip(np.linalg.norm(accel_desired) / (params.n_motors * params.kf), 0.0, 1.0)
-
-    # ---------------- Prepare TiltHdgRate reference ----------------
-    tilt_ref = TiltHdgRate()
-    tilt_ref.tilt_vector = tilt_vector
-    tilt_ref.heading_rate = 0.0   # maintain heading
-    tilt_ref.throttle = throttle_cmd
-
-    # ---------------- Inner loop: attitude control ----------------
-    att_rate_cmd = attitude_controller.get_control_signal(state, tilt_ref, dt)
-
-    # ---------------- Mixer: attitude rates → motor commands ----------------
-    actuators = mixer.get_control_signal(att_rate_cmd)
-
-    # ---------------- Apply to UAV model ----------------
-    model.set_input(actuators.motors)
+    model.set_input(actuators_cmd.motors)
     model.step(dt)
 
     # Record trajectory
