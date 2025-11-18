@@ -11,7 +11,7 @@ from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv  # your env wrapp
 # MODEL_PATH = "PPO/best_model/best_model.zip"  # path to your trained model
 MODEL_PATH = "PPO_4_nsteps/best_model/best_model.zip"  # path to your trained model
 NUM_EPISODES = 1
-MAX_FRAMES = 1000  # maximum frames per episode
+MAX_FRAMES = 200  # maximum frames per episode
 VIDEO_PATH = "quad_test.mp4"
 FPS = 30
 
@@ -20,7 +20,7 @@ FPS = 30
 # ----------------------------
 num_of_agents = 4
 # env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
-env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
+env = SB3QuadrotorEnv(seed=2, quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
 
 # ----------------------------
 # Load trained model

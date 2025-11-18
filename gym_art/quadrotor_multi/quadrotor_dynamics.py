@@ -352,7 +352,7 @@ class QuadrotorDynamics:
 
     def step1_numba(self, thrust_cmds, dt, thrust_noise):
         self.thrust_rot_damp, self.thrust_cmds_damp, self.torques, self.torque, self.rot, self.since_last_svd, \
-            self.omega_dot, self.omega, self.pos, thrust, rotor_drag_force, self.vel = \
+            self.omega_dot, self.omega, self.pos, thrust, rotor_drag_force, self.vel, self.thrusts = \
             calculate_torque_integrate_rotations_and_update_omega(
                 thrust_cmds=thrust_cmds, motor_tau_up=self.motor_tau_up, motor_tau_down=self.motor_tau_down,
                 thrust_cmds_damp=self.thrust_cmds_damp, thrust_rot_damp=self.thrust_rot_damp, thr_noise=thrust_noise,
@@ -568,7 +568,7 @@ def calculate_torque_integrate_rotations_and_update_omega(
     pos = pos + dt * vel
 
     return thrust_rot_damp, thrust_cmds_damp, torques, torque, rot, since_last_svd, omega_dot, omega, pos, thrust, \
-        rotor_drag_force, vel
+        rotor_drag_force, vel, thrusts
 
 
 @njit

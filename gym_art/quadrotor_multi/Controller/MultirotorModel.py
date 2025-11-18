@@ -11,14 +11,14 @@ class ModelParams:
     # default parameters of the x500 quadrotor (same as C++)
     n_motors: int = 4
     g: float = 9.81
-    mass: float = 2.0
-    kf: float = 0.00000027087
-    km: float = 0.07
-    prop_radius: float = 0.15
-    arm_length: float = 0.25
-    body_height: float = 0.1
+    mass: float = 0.028  # 2.0
+    kf: float = 0.000000001  # Thrust coefficient
+    km: float = 0.0025  # Torque coefficient
+    prop_radius: float = 0.00015  # 0.15
+    arm_length: float = 0.04596  # 0.25
+    body_height: float = 0.003
     motor_time_constant: float = 0.03
-    max_rpm: float = 7800.0
+    max_rpm: float = 13000  # 7800.0
     min_rpm: float = 1170.0
     air_resistance_coeff: float = 0.30
 

@@ -3,10 +3,10 @@
 import numpy as np
 from dataclasses import dataclass
 
-from Pid import PIDController
-from MultirotorModel import ModelParams
+from .Pid import PIDController
+from .MultirotorModel import ModelParams
 
-from references import *
+from .references import *
 
 # ------------------------------------------------------------
 # VelocityController
@@ -19,7 +19,7 @@ class VelocityController:
         kp: float = 1.0
         kd: float = 0.5
         ki: float = 0.1
-        max_acceleration: float = 4.0   # m/s^2
+        max_acceleration: float = 40.0   # m/s^2
 
     # --------------------------------------------------------
 

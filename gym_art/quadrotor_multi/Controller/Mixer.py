@@ -1,8 +1,8 @@
 # mixer.py
 import numpy as np
 from dataclasses import dataclass
-from references import ControlGroup, Actuators
-from MultirotorModel import ModelParams   # import the ModelParams from previous translation
+from .references import ControlGroup, Actuators
+from .MultirotorModel import ModelParams   # import the ModelParams from previous translation
 
 
 class Mixer:
@@ -36,6 +36,7 @@ class Mixer:
 
         # compute pseudo-inverse: Aᵀ (A Aᵀ)⁻¹
         self.allocation_matrix_inv = alloc.T @ np.linalg.inv(alloc @ alloc.T)
+
 
         # ------------------------------------------------------
         # Normalize allocation matrix to PX4-style mixing

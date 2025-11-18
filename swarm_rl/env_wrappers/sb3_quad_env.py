@@ -31,6 +31,7 @@ class SB3QuadrotorEnv(gym.Env):
 
     def __init__(
         self,
+        seed=None,
         num_agents=1,
         episode_duration=15.0,
         obs_repr="xyz_vxyz_R_omega",
@@ -56,7 +57,7 @@ class SB3QuadrotorEnv(gym.Env):
         quads_render=False,
         **kwargs
     ):
-
+        self.seed = seed
         self.env = self._make_env(
             num_agents, episode_duration, obs_repr, neighbor_visible_num, neighbor_obs_type,
             collision_hitbox_radius, collision_falloff_radius,
@@ -66,6 +67,7 @@ class SB3QuadrotorEnv(gym.Env):
             quads_collision_reward, quads_collision_smooth_max_penalty, quads_obst_collision_reward,
             visualize_v_value, device, checkpoint_path
         )
+
         self.device = device
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
@@ -77,7 +79,7 @@ class SB3QuadrotorEnv(gym.Env):
                   anneal_collision_steps, quads_collision_reward, quads_collision_smooth_max_penalty,
                   quads_obst_collision_reward, visualize_v_value, device, checkpoint_path):
 
-        from gym_art.quadrotor_multi.quadrotor_multi import QuadrotorEnvMulti
+        from gym_art.quadrotor_multi.quadrotor_multi_controller import QuadrotorEnvMulti
 
         # --- 1. Base env ---
         quad = "Crazyflie"
@@ -103,7 +105,7 @@ class SB3QuadrotorEnv(gym.Env):
         rew_coeff = DEFAULT_QUAD_REWARD_SHAPING["quad_rewards"]
 
         env = QuadrotorEnvMulti(
-            cfg=DummyCfg(seed=1),  # unused in this context, but required by constructor
+            cfg=DummyCfg(seed=self.seed),  # unused in this context, but required by constructor
             num_agents=num_agents,
             ep_time=episode_duration,
             rew_coeff=rew_coeff,

@@ -1,7 +1,7 @@
 import numpy as np
-from Pid import PIDController
-from references import *
-from MultirotorModel import MultirotorModel, ModelParams, State
+from .Pid import PIDController
+from .references import *
+from .MultirotorModel import MultirotorModel, ModelParams, State
 
 
 class AttitudeController:

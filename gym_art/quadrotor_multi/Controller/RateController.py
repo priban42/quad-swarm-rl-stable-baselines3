@@ -1,9 +1,9 @@
 import numpy as np
 from dataclasses import dataclass
 
-from Pid import PIDController
-from MultirotorModel import ModelParams
-from references import ControlGroup, AttitudeRate
+from .Pid import PIDController
+from .MultirotorModel import ModelParams
+from .references import ControlGroup, AttitudeRate
 
 
 class RateController:
@@ -78,9 +78,9 @@ class RateController:
         ang_error = ang_ref - state.omega
 
         out = ControlGroup()
-        out.roll     = self.pid_x.update(ang_error[0], dt)
-        out.pitch    = self.pid_y.update(ang_error[1], dt)
-        out.yaw      = self.pid_z.update(ang_error[2], dt)
+        out.roll     = self.pid_x.update(ang_error[0], dt)*80
+        out.pitch    = self.pid_y.update(ang_error[1], dt)*80
+        out.yaw      = self.pid_z.update(ang_error[2], dt)*80
         out.throttle = reference.throttle
 
         return out

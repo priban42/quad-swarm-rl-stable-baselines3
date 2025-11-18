@@ -1,8 +1,8 @@
 import numpy as np
 from dataclasses import dataclass
 
-from references import Attitude, TiltHdgRate, AccelerationHdg, AccelerationHdgRate
-from MultirotorModel import ModelParams
+from .references import Attitude, TiltHdgRate, AccelerationHdg, AccelerationHdgRate
+from .MultirotorModel import ModelParams
 
 
 class AccelerationController:
@@ -27,28 +27,19 @@ class AccelerationController:
         # Desired heading direction projected into XY
         bxd = np.array([np.cos(reference.heading), np.sin(reference.heading), 0.0])
 
-        # -----------------------------------------
-        # Construct desired rotation matrix Rd
-        # -----------------------------------------
-
         Rd = np.zeros((3, 3))
-
         # Body Z axis = fd direction
         Rd[:, 2] = fd_norm
-
-        # ---- Oblique projection of bxd into plane perpendicular to fd_norm ----
-
         # Complement projector
         projector = np.eye(3) - np.outer(fd_norm, fd_norm)
-
         # Basis for nullspace (A)
         A = projector[:, :2]     # 3x2 matrix
-
         # Basis for XY plane (B)
         B = np.eye(3)[:, :2]     # 3x2
 
         Bt_A = B.T @ A                   # (2x2)
-        Bt_A_pinv = np.linalg.inv(Bt_A.T @ Bt_A) @ Bt_A.T
+        # Bt_A_pinv = np.linalg.inv(Bt_A.T @ Bt_A) @ Bt_A.T
+        Bt_A_pinv = np.linalg.pinv(Bt_A)
         oblique_projector = A @ Bt_A_pinv @ B.T     # (3×3)
 
         # Body X axis
@@ -67,7 +58,7 @@ class AccelerationController:
         # Compute throttle
         # -----------------------------------------
         thrust_force = np.dot(fd, state.R[:, 2])
-
+        thrust_force = max(thrust_force, 0)
         throttle = (np.sqrt(thrust_force / (kf * n_motors)) - min_rpm) / (max_rpm - min_rpm)
         throttle = float(np.clip(throttle, 0.0, 1.0))
 
@@ -77,6 +68,9 @@ class AccelerationController:
         out = Attitude()
         out.orientation = Rd
         out.throttle = throttle
+
+        if np.isnan(throttle):
+            pass
 
         return out
 
