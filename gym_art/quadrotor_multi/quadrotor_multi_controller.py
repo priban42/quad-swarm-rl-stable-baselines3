@@ -477,7 +477,11 @@ class QuadrotorEnvMulti(gym.Env):
             obs.append(observation)
             self.pos[i, :] = e.dynamics.pos
 
-        self.envs[0].dynamics.set_state(self.envs[0].goal + np.array([0.0, 0.3, 0]), np.zeros(3), np.eye(3), np.zeros(3))
+
+        #ODO: Remove Before training
+        #for i in range(len(self.envs)):
+        #    self.envs[i].dynamics.set_state(self.envs[0].goal + np.array([0.2, 0.2 + 0.3*(i-3), 0]), np.zeros(3), np.eye(3), np.zeros(3))
+        #    self.envs[i].init_state[0] = self.envs[i].dynamics.pos
 
         # Neighbors
         if self.num_use_neighbor_obs > 0:

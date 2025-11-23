@@ -12,7 +12,7 @@ class ModelParams:
     n_motors: int = 4
     g: float = 9.81
     mass: float = 0.028  # 2.0
-    kf: float = 0.000000001  # Thrust coefficient
+    kf: float = 0.00000000125  # Thrust coefficient
     km: float = 0.0025  # Torque coefficient
     prop_radius: float = 0.00015  # 0.15
     arm_length: float = 0.04596  # 0.25

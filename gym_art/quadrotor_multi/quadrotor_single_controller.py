@@ -188,6 +188,10 @@ class QuadrotorSingle:
         self.dyn_base_sampler = getattr(quad_rand, dynamics_params)()
         self.dynamics_change = copy.deepcopy(dynamics_change)
         self.dynamics_params = self.dyn_base_sampler.sample()
+
+        ##ODO: change the noise back
+        # self.dynamics_change['noise']['thrust_noise_ratio'] = 0.05
+
         # Now, updating if we are providing modifications
         if self.dynamics_change is not None:
             dict_update_existing(self.dynamics_params, self.dynamics_change)
@@ -356,7 +360,7 @@ class QuadrotorSingle:
         return [seed]
 
     def _step(self, action):
-        # action = np.zeros(4)
+
         # action = np.array([10, 10, 0, 0])
         # action[2] = (self.goal[2] - self.dynamics.pos[2])*4
         v_prev = (self.dynamics.vel - self.dt * (self.dynamics.rot @ self.dynamics.acc - np.array([0.0, 0.0, self.gravity])))
@@ -366,11 +370,15 @@ class QuadrotorSingle:
 
         # action[2] = (self.goal[2] - self.dynamics.pos[2])*1
         current_state = State(self.dynamics.pos, self.dynamics.vel, v_prev, self.dynamics.rot, self.dynamics.omega, motors_rpm)
-        pca = self.pre_controller.update(current_state, action, self.dt)
-        # reordered_pre_controlled_action = np.array([pca[3], pca[2], pca[0], pca[1]])*2 - 1
-        reordered_pre_controlled_action = np.array([pca[0], pca[3], pca[1], pca[2]])*2 - 1
-        custom_action = reordered_pre_controlled_action
+        # artificial_action = self.init_state[0]  # self.init_state = [pos, vel, rotation, omega]
+        # artificial_action = np.zeros(4)
+        # pca = self.pre_controller.update_vel(current_state, action, self.dt)
 
+        pca = self.pre_controller.update_pos(current_state, self.goal, self.dt)
+        reordered_pre_controlled_action = np.array([pca[0], pca[3], pca[1], pca[2]])*2 - 1
+        custom_action = np.arctan(reordered_pre_controlled_action)
+
+        # custom_action = action
         # custom_action = np.array([0.2, 0.0, 0.2, 0])
         self.actions[1] = copy.deepcopy(self.actions[0])
         self.actions[0] = copy.deepcopy(custom_action)
@@ -485,6 +493,7 @@ class QuadrotorSingle:
         self.actions = [np.zeros([4, ]), np.zeros([4, ])]
 
         state = self.state_vector(self)
+
         return state
 
     def reset(self):

@@ -78,9 +78,9 @@ class RateController:
         ang_error = ang_ref - state.omega
 
         out = ControlGroup()
-        out.roll     = self.pid_x.update(ang_error[0], dt)*80
-        out.pitch    = self.pid_y.update(ang_error[1], dt)*80
-        out.yaw      = self.pid_z.update(ang_error[2], dt)*80
+        out.roll     = self.pid_x.update(ang_error[0], dt)*800
+        out.pitch    = self.pid_y.update(ang_error[1], dt)*800
+        out.yaw      = self.pid_z.update(ang_error[2], dt)*800
         out.throttle = reference.throttle
 
         return out
