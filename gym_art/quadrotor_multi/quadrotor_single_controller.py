@@ -29,6 +29,8 @@ from gym_art.quadrotor_multi.sensor_noise import SensorNoise
 from .Controller.Controller import Controller
 from .Controller.MultirotorModel import State
 
+from .Controller.references import *
+
 GRAV = 9.81  # default gravitational constant
 
 
@@ -189,7 +191,7 @@ class QuadrotorSingle:
         self.dynamics_change = copy.deepcopy(dynamics_change)
         self.dynamics_params = self.dyn_base_sampler.sample()
 
-        ##ODO: change the noise back
+        #ODO: change the noise back
         # self.dynamics_change['noise']['thrust_noise_ratio'] = 0.05
 
         # Now, updating if we are providing modifications
@@ -372,9 +374,38 @@ class QuadrotorSingle:
         current_state = State(self.dynamics.pos, self.dynamics.vel, v_prev, self.dynamics.rot, self.dynamics.omega, motors_rpm)
         # artificial_action = self.init_state[0]  # self.init_state = [pos, vel, rotation, omega]
         # artificial_action = np.zeros(4)
-        # pca = self.pre_controller.update_vel(current_state, action, self.dt)
 
-        pca = self.pre_controller.update_pos(current_state, self.goal, self.dt)
+        # pca = self.pre_controller.update_vel(current_state, action, self.dt)
+        pca = self.pre_controller.update_vel_height(current_state, action, self.goal[2], self.dt)
+        # pca = self.pre_controller.update_vel_height(current_state, np.clip((self.goal[:2] - self.dynamics.pos[:2])*5, -1, 1), self.goal[2], self.dt)
+
+        # pca = self.pre_controller.update_pos(current_state, self.goal, self.dt)
+        pass
+        # ref = Position(position=self.init_state[0] + np.array([0.5, 0, 0]), heading=0)
+        # pca = self.pre_controller.test_step_response(current_state, self.dt, position_cmd=ref,file_name="pos_response.p")
+
+        # ref = VelocityHdg(velocity=np.array([0.2, 0, 0]), heading=0)
+        # pca = self.pre_controller.test_step_response(current_state, self.dt, velocity_hdg_cmd=ref,file_name="vel_response.p")
+
+        # ref = AccelerationHdg(acceleration=np.array([0.2, 0, 0]), heading=0)
+        # pca = self.pre_controller.test_step_response(current_state, self.dt, acceleration_hdg_cmd=ref, file_name="acc_response.p")
+
+        # def rotation_x(theta):
+        #     """Return 3×3 rotation matrix for rotation around the X-axis by angle theta (radians)."""
+        #     c = np.cos(theta)
+        #     s = np.sin(theta)
+        #     return np.array([
+        #         [1, 0, 0],
+        #         [0, c, -s],
+        #         [0, s, c]
+        #     ])
+
+        # ref = Attitude(orientation=rotation_x(0.1), throttle=0.6)
+        # pca = self.pre_controller.test_step_response(current_state, self.dt, attitude_cmd=ref, file_name="att_response.p")
+
+        # ref = AttitudeRate(rate_x=1, rate_y=0, rate_z=0, throttle=0.6)
+        # pca = self.pre_controller.test_step_response(current_state, self.dt, attitude_rate_cmd=ref, file_name="att_rate_response.p")
+
         reordered_pre_controlled_action = np.array([pca[0], pca[3], pca[1], pca[2]])*2 - 1
         custom_action = np.arctan(reordered_pre_controlled_action)
 
