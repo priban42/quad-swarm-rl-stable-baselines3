@@ -279,7 +279,11 @@ class QuadrotorSingle:
             self.controller = NonlinearPositionController(self.dynamics, tf_control=self.tf_control)
 
         # ACTIONS
+        # self.action_space = self.controller.action_space(self.dynamics)
+        self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
         self.action_space = self.controller.action_space(self.dynamics)
+
+        # self.action_space = spaces.Box(-np.ones(2), np.ones(2), dtype=np.float32)
 
         # STATE VECTOR FUNCTION
         self.state_vector = getattr(get_state, "state_" + self.obs_repr)
@@ -377,7 +381,7 @@ class QuadrotorSingle:
 
         # pca = self.pre_controller.update_vel(current_state, action, self.dt)
         pca = self.pre_controller.update_vel_height(current_state, action, self.goal[2], self.dt)
-        # pca = self.pre_controller.update_vel_height(current_state, np.clip((self.goal[:2] - self.dynamics.pos[:2])*5, -1, 1), self.goal[2], self.dt)
+        # pca = self.pre_controller.update_vel_height(current_state, np.clip((self.goal[:2] - self.dynamics.pos[:2])*1, -1, 1), self.goal[2], self.dt)
 
         # pca = self.pre_controller.update_pos(current_state, self.goal, self.dt)
         pass

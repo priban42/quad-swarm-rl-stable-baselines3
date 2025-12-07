@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument("--num_envs", type=int, default=48)
     parser.add_argument("--total_timesteps", type=int, default=150_000_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--logdir", type=str, default="./PPO_4_controller")
+    parser.add_argument("--logdir", type=str, default="./PPO_1_controller")
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
     parser.add_argument("--algo", type=str, default="ppo", choices=["ppo", "a2c", "sac"])
     parser.add_argument("--eval_freq", type=int, default=100_000)
@@ -105,9 +105,12 @@ def main():
         # policy_kwargs=policy_kwargs,
         learning_rate=args.learning_rate,
         n_steps=512,  # rollout
+        # n_steps=2048,  # rollout
         batch_size=1024,
+        # batch_size=2048,
         n_epochs=10,
         gamma=0.99,
+        # gamma=0.999,
         # gae_lambda=1.0,
         # clip_range=5.0,
         verbose=1,

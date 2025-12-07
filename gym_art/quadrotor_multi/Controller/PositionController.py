@@ -12,7 +12,7 @@ class PositionController:
     class Params:
         kp: float = 6.0
         kd: float = 0.3
-        ki: float = 1.2
+        ki: float = 3.0
         max_velocity: float = 6.0   # m/s
 
     # --------------------------------------------------------
@@ -48,7 +48,7 @@ class PositionController:
         self.pid_y.set_params(self.params.kp, self.params.kd, self.params.ki,
                               self.params.max_velocity, 1.0)
         self.pid_z.set_params(self.params.kp, self.params.kd, self.params.ki,
-                              self.params.max_velocity, 1.0)
+                              self.params.max_velocity, 2.0)
 
     # --------------------------------------------------------
     # get_control_signal: Position → VelocityHdg

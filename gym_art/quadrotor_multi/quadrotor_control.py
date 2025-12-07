@@ -64,6 +64,43 @@ class RawControl(object):
         dynamics.step(action, dt)
         self.action = action.copy()
 
+class CustomPidControl(object):
+    def __init__(self, dynamics, zero_action_middle=True):
+        self.zero_action_middle = zero_action_middle
+        # print("RawControl: self.zero_action_middle", self.zero_action_middle)
+        self.action = None
+        self.step_func = self.step
+
+    def action_space(self, dynamics):
+        if not self.zero_action_middle:
+            # Range of actions 0 .. 1
+            self.low = np.zeros(2)
+            self.bias = 0.0
+            self.scale = 1.0
+        else:
+            # Range of actions -1 .. 1
+            self.low = -np.ones(2)
+            self.bias = 1.0
+            self.scale = 0.5
+        self.high = np.ones(2)
+        return spaces.Box(self.low, self.high, dtype=np.float32)
+
+    # modifies the dynamics in place.
+    # @profile
+    def step(self, dynamics, action, goal, dt, observation=None):  # action.size = (4)
+        action = np.clip(action, a_min=-np.ones(4), a_max=np.ones(4))
+        action = self.scale * (action + self.bias)
+        dynamics.step(action, dt)
+        self.action = action.copy()
+
+    # @profile
+    def step_tf(self, dynamics, action, goal, dt, observation=None):
+        # print('bias/scale: ', self.scale, self.bias)
+        action = np.clip(action, a_min=self.low, a_max=self.high)
+        action = self.scale * (action + self.bias)
+        dynamics.step(action, dt)
+        self.action = action.copy()
+
 
 class VerticalControl(object):
     def __init__(self, dynamics, zero_action_middle=True, dim_mode="3D"):

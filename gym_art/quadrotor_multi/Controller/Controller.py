@@ -49,7 +49,7 @@ class Controller:
     def update_vel_height(self, state, command, height, dt):
         position_cmd = Position(position=np.array([0, 0, height]), heading=0.0)
         velocity_hdg_cmd = self.position_controller.get_control_signal(state, position_cmd, dt)
-        velocity_hdg_cmd.velocity[:2] = command[:2]*0.6
+        velocity_hdg_cmd.velocity[:2] = command[:2]*2
         # velocity_hdg_cmd.heading = 0.0
 
         acceleration_hdg_cmd = self.velocity_controller.get_control_signal(state, velocity_hdg_cmd, dt)

@@ -526,325 +526,331 @@ class QuadrotorEnvMulti(gym.Env):
         # return obs
 
     def step(self, actions):
-        obs, rewards, dones, infos = [], [], [], []
+        for substep in range(8):
+            obs, rewards, dones, infos = [], [], [], []
 
-        for i, a in enumerate(np.atleast_2d(actions)):
-            self.envs[i].rew_coeff = self.rew_coeff
+            for i, a in enumerate(np.atleast_2d(actions)):
+                self.envs[i].rew_coeff = self.rew_coeff
 
-            observation, reward, done, info = self.envs[i].step(a)
-            obs.append(observation)
-            rewards.append(reward)
-            dones.append(done)
-            infos.append(info)
+                observation, reward, done, info = self.envs[i].step(a)
+                obs.append(observation)
+                rewards.append(reward)
+                dones.append(done)
+                infos.append(info)
 
-            self.pos[i, :] = self.envs[i].dynamics.pos
+                self.pos[i, :] = self.envs[i].dynamics.pos
 
-        # 1. Calculate collisions: 1) between drones 2) with obstacles 3) with room
-        # 1) Collisions between drones
-        drone_col_matrix, curr_drone_collisions, distance_matrix = \
-            calculate_collision_matrix(positions=self.pos, collision_threshold=self.collision_threshold)
+            # 1. Calculate collisions: 1) between drones 2) with obstacles 3) with room
+            # 1) Collisions between drones
+            drone_col_matrix, curr_drone_collisions, distance_matrix = \
+                calculate_collision_matrix(positions=self.pos, collision_threshold=self.collision_threshold)
 
-        # # Filter curr_drone_collisions
-        curr_drone_collisions = curr_drone_collisions.astype(int)
-        curr_drone_collisions = np.delete(curr_drone_collisions, np.unique(
-            np.where(curr_drone_collisions == [-1000, -1000])[0]), axis=0)
+            # # Filter curr_drone_collisions
+            curr_drone_collisions = curr_drone_collisions.astype(int)
+            curr_drone_collisions = np.delete(curr_drone_collisions, np.unique(
+                np.where(curr_drone_collisions == [-1000, -1000])[0]), axis=0)
 
-        old_quad_collision = set(map(tuple, self.prev_drone_collisions))
-        new_quad_collision = np.array([x for x in curr_drone_collisions if tuple(x) not in old_quad_collision])
+            old_quad_collision = set(map(tuple, self.prev_drone_collisions))
+            new_quad_collision = np.array([x for x in curr_drone_collisions if tuple(x) not in old_quad_collision])
 
-        self.last_step_unique_collisions = np.setdiff1d(curr_drone_collisions, self.prev_drone_collisions)
-        if len(self.last_step_unique_collisions) > 0:
-            print("collision detected")
-        # # Filter distance_matrix; Only contains quadrotor pairs with distance <= self.collision_threshold
-        near_quad_ids = np.where(distance_matrix[:, 2] <= self.collision_falloff_threshold)
-        distance_matrix = distance_matrix[near_quad_ids]
+            self.last_step_unique_collisions = np.setdiff1d(curr_drone_collisions, self.prev_drone_collisions)
+            if len(self.last_step_unique_collisions) > 0:
+                print("collision detected")
+            # # Filter distance_matrix; Only contains quadrotor pairs with distance <= self.collision_threshold
+            near_quad_ids = np.where(distance_matrix[:, 2] <= self.collision_falloff_threshold)
+            distance_matrix = distance_matrix[near_quad_ids]
 
-        # Collision between 2 drones counts as a single collision
-        # # Calculate collisions (i) All collisions (ii) collisions after grace period
-        collisions_curr_tick = len(self.last_step_unique_collisions) // 2
-        self.collisions_per_episode += collisions_curr_tick
+            # Collision between 2 drones counts as a single collision
+            # # Calculate collisions (i) All collisions (ii) collisions after grace period
+            collisions_curr_tick = len(self.last_step_unique_collisions) // 2
+            self.collisions_per_episode += collisions_curr_tick
 
-        if collisions_curr_tick > 0 and self.envs[0].tick >= self.collisions_grace_period_steps:
-            self.collisions_after_settle += collisions_curr_tick
-            for agent_id in self.last_step_unique_collisions:
-                self.agent_col_agent[agent_id] = 0
-        if collisions_curr_tick > 0 and self.envs[0].time_remain <= self.collisions_final_grace_period_steps:
-            self.collisions_final_5s += collisions_curr_tick
+            if collisions_curr_tick > 0 and self.envs[0].tick >= self.collisions_grace_period_steps:
+                self.collisions_after_settle += collisions_curr_tick
+                for agent_id in self.last_step_unique_collisions:
+                    self.agent_col_agent[agent_id] = 0
+            if collisions_curr_tick > 0 and self.envs[0].time_remain <= self.collisions_final_grace_period_steps:
+                self.collisions_final_5s += collisions_curr_tick
 
-        # # Aux: Neighbor Collisions
-        self.prev_drone_collisions = curr_drone_collisions
+            # # Aux: Neighbor Collisions
+            self.prev_drone_collisions = curr_drone_collisions
 
-        # 2) Collisions with obstacles
-        if self.use_obstacles:
-            rew_obst_quad_collisions_raw = np.zeros(self.num_agents)
-            obst_quad_col_matrix, quad_obst_pair = self.obstacles.collision_detection(pos_quads=self.pos)
-            # We assume drone can only collide with one obstacle at the same time.
-            # Given this setting, in theory, the gap between obstacles should >= 0.1 (drone diameter: 0.46*2 = 0.92)
-            self.curr_quad_col = np.setdiff1d(obst_quad_col_matrix, self.prev_obst_quad_collisions)
-            collisions_obst_curr_tick = len(self.curr_quad_col)
-            self.obst_quad_collisions_per_episode += collisions_obst_curr_tick
-
-            if collisions_obst_curr_tick > 0 and self.envs[0].tick >= self.collisions_grace_period_steps:
-                self.obst_quad_collisions_after_settle += collisions_obst_curr_tick
-                for qid in self.curr_quad_col:
-                    q_rel_dist = np.linalg.norm(obs[qid][0:3])
-                    if q_rel_dist > 3.5:
-                        self.distance_to_goal_3_5 += 1
-                    if q_rel_dist > 5.0:
-                        self.distance_to_goal_5 += 1
-                    # Used for log agent_success
-                    self.agent_col_obst[qid] = 0
-
-            # # Aux: Obstacle Collisions
-            self.prev_obst_quad_collisions = obst_quad_col_matrix
-
-            if len(obst_quad_col_matrix) > 0:
-                # We assign penalties to the drones which collide with the obstacles
-                # And obst_quad_last_step_unique_collisions only include drones' id
-                rew_obst_quad_collisions_raw[self.curr_quad_col] = -1.0
-
-        # 3) Collisions with room
-        floor_crash_list, wall_crash_list, ceiling_crash_list = self.calculate_room_collision()
-        room_crash_list = np.unique(np.concatenate([floor_crash_list, wall_crash_list, ceiling_crash_list]))
-        room_crash_list = np.setdiff1d(room_crash_list, self.prev_crashed_room)
-        # # Aux: Room Collisions
-        self.prev_crashed_walls = wall_crash_list
-        self.prev_crashed_ceiling = ceiling_crash_list
-        self.prev_crashed_room = room_crash_list
-
-        # 2. Calculate rewards and infos for collision
-        # 1) Between drones
-        rew_collisions_raw = np.zeros(self.num_agents)
-        if self.last_step_unique_collisions.any():
-            rew_collisions_raw[self.last_step_unique_collisions] = -1.0
-        rew_collisions = self.rew_coeff["quadcol_bin"] * rew_collisions_raw
-
-        # penalties for being too close to other drones
-        if len(distance_matrix) > 0:
-            rew_proximity = -1.0 * calculate_drone_proximity_penalties(
-                distance_matrix=distance_matrix, collision_falloff_threshold=self.collision_falloff_threshold,
-                dt=self.control_dt, max_penalty=self.rew_coeff["quadcol_bin_smooth_max"], num_agents=self.num_agents,
-            )
-        else:
-            rew_proximity = np.zeros(self.num_agents)
-
-        # 2) With obstacles
-        rew_collisions_obst_quad = np.zeros(self.num_agents)
-        if self.use_obstacles:
-            rew_collisions_obst_quad = self.rew_coeff["quadcol_bin_obst"] * rew_obst_quad_collisions_raw
-
-        # 3) With room
-        # # TODO: reward penalty
-        if self.envs[0].tick >= self.collisions_grace_period_steps:
-            self.collisions_room_per_episode += len(room_crash_list)
-            self.collisions_floor_per_episode += len(floor_crash_list)
-            self.collisions_wall_per_episode += len(wall_crash_list)
-            self.collisions_ceiling_per_episode += len(ceiling_crash_list)
-
-        # Reward & Info
-        for i in range(self.num_agents):
-            rewards[i] += rew_collisions[i]
-            rewards[i] += rew_proximity[i]
-
-            infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
-            infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]
-            infos[i]["rewards"]["rewraw_quadcol"] = rew_collisions_raw[i]
-
+            # 2) Collisions with obstacles
             if self.use_obstacles:
-                rewards[i] += rew_collisions_obst_quad[i]
-                infos[i]["rewards"]["rew_quadcol_obstacle"] = rew_collisions_obst_quad[i]
-                infos[i]["rewards"]["rewraw_quadcol_obstacle"] = rew_obst_quad_collisions_raw[i]
+                rew_obst_quad_collisions_raw = np.zeros(self.num_agents)
+                obst_quad_col_matrix, quad_obst_pair = self.obstacles.collision_detection(pos_quads=self.pos)
+                # We assume drone can only collide with one obstacle at the same time.
+                # Given this setting, in theory, the gap between obstacles should >= 0.1 (drone diameter: 0.46*2 = 0.92)
+                self.curr_quad_col = np.setdiff1d(obst_quad_col_matrix, self.prev_obst_quad_collisions)
+                collisions_obst_curr_tick = len(self.curr_quad_col)
+                self.obst_quad_collisions_per_episode += collisions_obst_curr_tick
 
-            self.distance_to_goal[i].append(-infos[i]["rewards"]["rewraw_pos"])
-            if len(self.distance_to_goal[i]) >= 5 and \
-                    np.mean(self.distance_to_goal[i][-5:]) / self.envs[0].dt < self.scenario.approch_goal_metric \
-                    and not self.reached_goal[i]:
-                self.reached_goal[i] = True
-            if self.test_logs:
-                self.metric_dist_to_goal[i].append(np.linalg.norm(self.envs[i].dynamics.pos - self.envs[i].goal))
+                if collisions_obst_curr_tick > 0 and self.envs[0].tick >= self.collisions_grace_period_steps:
+                    self.obst_quad_collisions_after_settle += collisions_obst_curr_tick
+                    for qid in self.curr_quad_col:
+                        q_rel_dist = np.linalg.norm(obs[qid][0:3])
+                        if q_rel_dist > 3.5:
+                            self.distance_to_goal_3_5 += 1
+                        if q_rel_dist > 5.0:
+                            self.distance_to_goal_5 += 1
+                        # Used for log agent_success
+                        self.agent_col_obst[qid] = 0
 
-        # 3. Applying random forces: 1) aerodynamics 2) between drones 3) obstacles 4) room
-        self_state_update_flag = False
+                # # Aux: Obstacle Collisions
+                self.prev_obst_quad_collisions = obst_quad_col_matrix
 
-        # # 1) aerodynamics
-        if self.use_downwash:
-            envs_dynamics = [env.dynamics for env in self.envs]
-            applied_downwash_list = perform_downwash(drones_dyn=envs_dynamics, dt=self.control_dt)
-            downwash_agents_list = np.where(applied_downwash_list == 1)[0]
-            if len(downwash_agents_list) > 0:
-                self_state_update_flag = True
+                if len(obst_quad_col_matrix) > 0:
+                    # We assign penalties to the drones which collide with the obstacles
+                    # And obst_quad_last_step_unique_collisions only include drones' id
+                    rew_obst_quad_collisions_raw[self.curr_quad_col] = -1.0
 
-        # # 2) Drones
-        if self.apply_collision_force:
-            if len(new_quad_collision) > 0:
-                self_state_update_flag = True
-                for val in new_quad_collision:
-                    dyn1, dyn2 = self.envs[val[0]].dynamics, self.envs[val[1]].dynamics
-                    dyn1.vel, dyn1.omega, dyn2.vel, dyn2.omega = perform_collision_between_drones(
-                        pos1=dyn1.pos, vel1=dyn1.vel, omega1=dyn1.omega, pos2=dyn2.pos, vel2=dyn2.vel, omega2=dyn2.omega)
+            # 3) Collisions with room
+            floor_crash_list, wall_crash_list, ceiling_crash_list = self.calculate_room_collision()
+            room_crash_list = np.unique(np.concatenate([floor_crash_list, wall_crash_list, ceiling_crash_list]))
+            room_crash_list = np.setdiff1d(room_crash_list, self.prev_crashed_room)
+            # # Aux: Room Collisions
+            self.prev_crashed_walls = wall_crash_list
+            self.prev_crashed_ceiling = ceiling_crash_list
+            self.prev_crashed_room = room_crash_list
 
-            # # 3) Obstacles
-            if self.use_obstacles:
-                if len(self.curr_quad_col) > 0:
-                    self_state_update_flag = True
-                    for val in self.curr_quad_col:
-                        obstacle_id = quad_obst_pair[int(val)]
-                        obstacle_pos = self.obstacles.pos_arr[int(obstacle_id)]
-                        perform_collision_with_obstacle(drone_dyn=self.envs[int(val)].dynamics,
-                                                        obstacle_pos=obstacle_pos,
-                                                        obstacle_size=self.obst_size)
+            # 2. Calculate rewards and infos for collision
+            # 1) Between drones
+            rew_collisions_raw = np.zeros(self.num_agents)
+            if self.last_step_unique_collisions.any():
+                rew_collisions_raw[self.last_step_unique_collisions] = -1.0
+            rew_collisions = self.rew_coeff["quadcol_bin"] * rew_collisions_raw
 
-            # # 4) Room
-            if len(wall_crash_list) > 0 or len(ceiling_crash_list) > 0:
-                self_state_update_flag = True
-
-                for val in wall_crash_list:
-                    perform_collision_with_wall(drone_dyn=self.envs[val].dynamics, room_box=self.envs[0].room_box)
-
-                for val in ceiling_crash_list:
-                    perform_collision_with_ceiling(drone_dyn=self.envs[val].dynamics)
-
-        # 4. Run the scenario passed to self.quads_mode
-        self.scenario.step()
-
-        # 5. Collect final observations
-        # Collect positions after physical interaction
-        for i in range(self.num_agents):
-            self.pos[i, :] = self.envs[i].dynamics.pos
-            self.vel[i, :] = self.envs[i].dynamics.vel
-            self.acc[i, :] = self.envs[i].dynamics.acc
-            self.rot[i, :] = self.envs[i].dynamics.rot
-
-        if self_state_update_flag:
-            obs = [e.state_vector(e) for e in self.envs]
-
-        # Concatenate observations of neighbor drones
-        if self.num_use_neighbor_obs > 0:
-            obs = self.add_neighborhood_obs(obs)
-
-        # Concatenate obstacle observations
-        if self.use_obstacles:
-            obs = self.obstacles.step(obs=obs, quads_pos=self.pos)
-
-        # 6. Update info for replay buffer
-        # Once agent learns how to take off, activate the replay buffer
-        if self.use_replay_buffer and not self.activate_replay_buffer:
-            self.crashes_last_episode += infos[0]["rewards"]["rew_crash"]
-
-        # Rendering
-        if self.quads_render:
-            # Collisions with room
-            ground_collisions = [1.0 if env.dynamics.on_floor else 0.0 for env in self.envs]
-            if self.use_obstacles:
-                obst_coll = [1.0 if i < 0 else 0.0 for i in rew_obst_quad_collisions_raw]
+            # penalties for being too close to other drones
+            if len(distance_matrix) > 0:
+                rew_proximity = -1.0 * calculate_drone_proximity_penalties(
+                    distance_matrix=distance_matrix, collision_falloff_threshold=self.collision_falloff_threshold,
+                    dt=self.control_dt, max_penalty=self.rew_coeff["quadcol_bin_smooth_max"], num_agents=self.num_agents,
+                )
             else:
-                obst_coll = [0.0 for _ in range(self.num_agents)]
-            self.all_collisions = {'drone': drone_col_matrix, 'ground': ground_collisions,
-                                   'obstacle': obst_coll}
+                rew_proximity = np.zeros(self.num_agents)
 
-        # 7. DONES
-        if any(dones):
-            scenario_name = self.scenario.name()[9:]
-            for i in range(len(infos)):
-                if self.saved_in_replay_buffer:
-                    infos[i]['episode_extra_stats'] = {
-                        'num_collisions_replay': self.collisions_per_episode,
-                        'num_collisions_obst_replay': self.obst_quad_collisions_per_episode,
-                    }
+            # 2) With obstacles
+            rew_collisions_obst_quad = np.zeros(self.num_agents)
+            if self.use_obstacles:
+                rew_collisions_obst_quad = self.rew_coeff["quadcol_bin_obst"] * rew_obst_quad_collisions_raw
+
+            # 3) With room
+            # # TODO: reward penalty
+            if self.envs[0].tick >= self.collisions_grace_period_steps:
+                self.collisions_room_per_episode += len(room_crash_list)
+                self.collisions_floor_per_episode += len(floor_crash_list)
+                self.collisions_wall_per_episode += len(wall_crash_list)
+                self.collisions_ceiling_per_episode += len(ceiling_crash_list)
+
+            # Reward & Info
+            for i in range(self.num_agents):
+                rewards[i] += rew_collisions[i]
+                rewards[i] += rew_proximity[i]
+
+                infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
+                infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]
+                infos[i]["rewards"]["rewraw_quadcol"] = rew_collisions_raw[i]
+
+                if self.use_obstacles:
+                    rewards[i] += rew_collisions_obst_quad[i]
+                    infos[i]["rewards"]["rew_quadcol_obstacle"] = rew_collisions_obst_quad[i]
+                    infos[i]["rewards"]["rewraw_quadcol_obstacle"] = rew_obst_quad_collisions_raw[i]
+
+                self.distance_to_goal[i].append(-infos[i]["rewards"]["rewraw_pos"])
+                if len(self.distance_to_goal[i]) >= 5 and \
+                        np.mean(self.distance_to_goal[i][-5:]) / self.envs[0].dt < self.scenario.approch_goal_metric \
+                        and not self.reached_goal[i]:
+                    self.reached_goal[i] = True
+                if self.test_logs:
+                    self.metric_dist_to_goal[i].append(np.linalg.norm(self.envs[i].dynamics.pos - self.envs[i].goal))
+
+            # 3. Applying random forces: 1) aerodynamics 2) between drones 3) obstacles 4) room
+            self_state_update_flag = False
+
+            # # 1) aerodynamics
+            if self.use_downwash:
+                envs_dynamics = [env.dynamics for env in self.envs]
+                applied_downwash_list = perform_downwash(drones_dyn=envs_dynamics, dt=self.control_dt)
+                downwash_agents_list = np.where(applied_downwash_list == 1)[0]
+                if len(downwash_agents_list) > 0:
+                    self_state_update_flag = True
+
+            # # 2) Drones
+            if self.apply_collision_force:
+                if len(new_quad_collision) > 0:
+                    self_state_update_flag = True
+                    for val in new_quad_collision:
+                        dyn1, dyn2 = self.envs[val[0]].dynamics, self.envs[val[1]].dynamics
+                        dyn1.vel, dyn1.omega, dyn2.vel, dyn2.omega = perform_collision_between_drones(
+                            pos1=dyn1.pos, vel1=dyn1.vel, omega1=dyn1.omega, pos2=dyn2.pos, vel2=dyn2.vel, omega2=dyn2.omega)
+
+                # # 3) Obstacles
+                if self.use_obstacles:
+                    if len(self.curr_quad_col) > 0:
+                        self_state_update_flag = True
+                        for val in self.curr_quad_col:
+                            obstacle_id = quad_obst_pair[int(val)]
+                            obstacle_pos = self.obstacles.pos_arr[int(obstacle_id)]
+                            perform_collision_with_obstacle(drone_dyn=self.envs[int(val)].dynamics,
+                                                            obstacle_pos=obstacle_pos,
+                                                            obstacle_size=self.obst_size)
+
+                # # 4) Room
+                if len(wall_crash_list) > 0 or len(ceiling_crash_list) > 0:
+                    self_state_update_flag = True
+
+                    for val in wall_crash_list:
+                        perform_collision_with_wall(drone_dyn=self.envs[val].dynamics, room_box=self.envs[0].room_box)
+
+                    for val in ceiling_crash_list:
+                        perform_collision_with_ceiling(drone_dyn=self.envs[val].dynamics)
+
+            # 4. Run the scenario passed to self.quads_mode
+            self.scenario.step()
+
+            # 5. Collect final observations
+            # Collect positions after physical interaction
+            for i in range(self.num_agents):
+                self.pos[i, :] = self.envs[i].dynamics.pos
+                self.vel[i, :] = self.envs[i].dynamics.vel
+                self.acc[i, :] = self.envs[i].dynamics.acc
+                self.rot[i, :] = self.envs[i].dynamics.rot
+
+            if self_state_update_flag:
+                obs = [e.state_vector(e) for e in self.envs]
+
+            # Concatenate observations of neighbor drones
+            if self.num_use_neighbor_obs > 0:
+                obs = self.add_neighborhood_obs(obs)
+
+            # Concatenate obstacle observations
+            if self.use_obstacles:
+                obs = self.obstacles.step(obs=obs, quads_pos=self.pos)
+
+            # 6. Update info for replay buffer
+            # Once agent learns how to take off, activate the replay buffer
+            if self.use_replay_buffer and not self.activate_replay_buffer:
+                self.crashes_last_episode += infos[0]["rewards"]["rew_crash"]
+
+            # Rendering
+            if self.quads_render:
+                # Collisions with room
+                ground_collisions = [1.0 if env.dynamics.on_floor else 0.0 for env in self.envs]
+                if self.use_obstacles:
+                    obst_coll = [1.0 if i < 0 else 0.0 for i in rew_obst_quad_collisions_raw]
                 else:
-                    self.distance_to_goal = np.array(self.distance_to_goal)
-                    self.reached_goal = np.array(self.reached_goal)
-                    infos[i]['episode_extra_stats'] = {
-                        'num_collisions': self.collisions_per_episode,
-                        'num_collisions_with_room': self.collisions_room_per_episode,
-                        'num_collisions_with_floor': self.collisions_floor_per_episode,
-                        'num_collisions_with_wall': self.collisions_wall_per_episode,
-                        'num_collisions_with_ceiling': self.collisions_ceiling_per_episode,
-                        'num_collisions_after_settle': self.collisions_after_settle,
-                        f'{scenario_name}/num_collisions': self.collisions_after_settle,
+                    obst_coll = [0.0 for _ in range(self.num_agents)]
+                self.all_collisions = {'drone': drone_col_matrix, 'ground': ground_collisions,
+                                       'obstacle': obst_coll}
 
-                        'num_collisions_final_5_s': self.collisions_final_5s,
-                        f'{scenario_name}/num_collisions_final_5_s': self.collisions_final_5s,
-
-                        'distance_to_goal_1s': (1.0 / self.envs[0].dt) * np.mean(
-                            self.distance_to_goal[i, int(-1 * self.control_freq):]),
-                        'distance_to_goal_3s': (1.0 / self.envs[0].dt) * np.mean(
-                            self.distance_to_goal[i, int(-3 * self.control_freq):]),
-                        'distance_to_goal_5s': (1.0 / self.envs[0].dt) * np.mean(
-                            self.distance_to_goal[i, int(-5 * self.control_freq):]),
-
-                        f'{scenario_name}/distance_to_goal_1s': (1.0 / self.envs[0].dt) * np.mean(
-                            self.distance_to_goal[i, int(-1 * self.control_freq):]),
-                        f'{scenario_name}/distance_to_goal_3s': (1.0 / self.envs[0].dt) * np.mean(
-                            self.distance_to_goal[i, int(-3 * self.control_freq):]),
-                        f'{scenario_name}/distance_to_goal_5s': (1.0 / self.envs[0].dt) * np.mean(
-                            self.distance_to_goal[i, int(-5 * self.control_freq):]),
-                    }
-
-                    if self.use_obstacles:
-                        infos[i]['episode_extra_stats']['num_collisions_obst_quad'] = \
-                            self.obst_quad_collisions_per_episode
-                        infos[i]['episode_extra_stats']['num_collisions_obst_quad_after_settle'] = \
-                            self.obst_quad_collisions_after_settle
-                        infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst'] = \
-                            self.obst_quad_collisions_per_episode
-
-                        infos[i]['episode_extra_stats']['num_collisions_obst_quad_3_5'] = \
-                            self.distance_to_goal_3_5
-                        infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst_quad_3_5'] = \
-                            self.distance_to_goal_3_5
-
-                        infos[i]['episode_extra_stats']['num_collisions_obst_quad_5'] = \
-                            self.distance_to_goal_5
-                        infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst_quad_5'] = \
-                            self.distance_to_goal_5
-
-            if not self.saved_in_replay_buffer:
-                # agent_success_rate: base_success_rate, based on per agent
-                # 0: collision; 1: no collision
-                agent_col_flag_list = np.logical_and(self.agent_col_agent, self.agent_col_obst)
-                agent_success_flag_list = np.logical_and(agent_col_flag_list, self.reached_goal)
-                agent_success_ratio = 1.0 * np.sum(agent_success_flag_list) / self.num_agents
-
-                # agent_deadlock_rate
-                # Doesn't approach to the goal while no collisions with other objects
-                agent_deadlock_list = np.logical_and(agent_col_flag_list, 1 - self.reached_goal)
-                agent_deadlock_ratio = 1.0 * np.sum(agent_deadlock_list) / self.num_agents
-
-                # agent_col_rate
-                # Collide with other drones and obstacles
-                agent_col_ratio = 1.0 - np.sum(agent_col_flag_list) / self.num_agents
-
-                # agent_neighbor_col_rate
-                agent_neighbor_col_ratio = 1.0 - np.sum(self.agent_col_agent) / self.num_agents
-                # agent_obst_col_rate
-                agent_obst_col_ratio = 1.0 - np.sum(self.agent_col_obst) / self.num_agents
-
+            # 7. DONES
+            if any(dones):
+                scenario_name = self.scenario.name()[9:]
                 for i in range(len(infos)):
-                    # agent_success_rate
-                    infos[i]['episode_extra_stats']['metric/agent_success_rate'] = agent_success_ratio
-                    infos[i]['episode_extra_stats'][f'{scenario_name}/agent_success_rate'] = agent_success_ratio
-                    # agent_deadlock_rate
-                    infos[i]['episode_extra_stats']['metric/agent_deadlock_rate'] = agent_deadlock_ratio
-                    infos[i]['episode_extra_stats'][f'{scenario_name}/agent_deadlock_rate'] = agent_deadlock_ratio
-                    # agent_col_rate
-                    infos[i]['episode_extra_stats']['metric/agent_col_rate'] = agent_col_ratio
-                    infos[i]['episode_extra_stats'][f'{scenario_name}/agent_col_rate'] = agent_col_ratio
-                    # agent_neighbor_col_rate
-                    infos[i]['episode_extra_stats']['metric/agent_neighbor_col_rate'] = agent_neighbor_col_ratio
-                    infos[i]['episode_extra_stats'][f'{scenario_name}/agent_neighbor_col_rate'] = agent_neighbor_col_ratio
-                    # agent_obst_col_rate
-                    infos[i]['episode_extra_stats']['metric/agent_obst_col_rate'] = agent_obst_col_ratio
-                    infos[i]['episode_extra_stats'][f'{scenario_name}/agent_obst_col_rate'] = agent_obst_col_ratio
+                    if self.saved_in_replay_buffer:
+                        infos[i]['episode_extra_stats'] = {
+                            'num_collisions_replay': self.collisions_per_episode,
+                            'num_collisions_obst_replay': self.obst_quad_collisions_per_episode,
+                        }
+                    else:
+                        self.distance_to_goal = np.array(self.distance_to_goal)
+                        self.reached_goal = np.array(self.reached_goal)
+                        infos[i]['episode_extra_stats'] = {
+                            'num_collisions': self.collisions_per_episode,
+                            'num_collisions_with_room': self.collisions_room_per_episode,
+                            'num_collisions_with_floor': self.collisions_floor_per_episode,
+                            'num_collisions_with_wall': self.collisions_wall_per_episode,
+                            'num_collisions_with_ceiling': self.collisions_ceiling_per_episode,
+                            'num_collisions_after_settle': self.collisions_after_settle,
+                            f'{scenario_name}/num_collisions': self.collisions_after_settle,
 
-            if self.test_logs:
-                self.all_colisions_per_episode.append(self.collisions_per_episode)
-                self.save_plot_info()
-            obs, _ = self.reset()
-            # terminate the episode for all "sub-envs"
-            dones = [True] * len(dones)
-        # return obs, rewards, dones, dones, infos
-        self.obs = obs
+                            'num_collisions_final_5_s': self.collisions_final_5s,
+                            f'{scenario_name}/num_collisions_final_5_s': self.collisions_final_5s,
+
+                            'distance_to_goal_1s': (1.0 / self.envs[0].dt) * np.mean(
+                                self.distance_to_goal[i, int(-1 * self.control_freq):]),
+                            'distance_to_goal_3s': (1.0 / self.envs[0].dt) * np.mean(
+                                self.distance_to_goal[i, int(-3 * self.control_freq):]),
+                            'distance_to_goal_5s': (1.0 / self.envs[0].dt) * np.mean(
+                                self.distance_to_goal[i, int(-5 * self.control_freq):]),
+
+                            f'{scenario_name}/distance_to_goal_1s': (1.0 / self.envs[0].dt) * np.mean(
+                                self.distance_to_goal[i, int(-1 * self.control_freq):]),
+                            f'{scenario_name}/distance_to_goal_3s': (1.0 / self.envs[0].dt) * np.mean(
+                                self.distance_to_goal[i, int(-3 * self.control_freq):]),
+                            f'{scenario_name}/distance_to_goal_5s': (1.0 / self.envs[0].dt) * np.mean(
+                                self.distance_to_goal[i, int(-5 * self.control_freq):]),
+                        }
+
+                        if self.use_obstacles:
+                            infos[i]['episode_extra_stats']['num_collisions_obst_quad'] = \
+                                self.obst_quad_collisions_per_episode
+                            infos[i]['episode_extra_stats']['num_collisions_obst_quad_after_settle'] = \
+                                self.obst_quad_collisions_after_settle
+                            infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst'] = \
+                                self.obst_quad_collisions_per_episode
+
+                            infos[i]['episode_extra_stats']['num_collisions_obst_quad_3_5'] = \
+                                self.distance_to_goal_3_5
+                            infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst_quad_3_5'] = \
+                                self.distance_to_goal_3_5
+
+                            infos[i]['episode_extra_stats']['num_collisions_obst_quad_5'] = \
+                                self.distance_to_goal_5
+                            infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst_quad_5'] = \
+                                self.distance_to_goal_5
+
+                if not self.saved_in_replay_buffer:
+                    # agent_success_rate: base_success_rate, based on per agent
+                    # 0: collision; 1: no collision
+                    agent_col_flag_list = np.logical_and(self.agent_col_agent, self.agent_col_obst)
+                    agent_success_flag_list = np.logical_and(agent_col_flag_list, self.reached_goal)
+                    agent_success_ratio = 1.0 * np.sum(agent_success_flag_list) / self.num_agents
+
+                    # agent_deadlock_rate
+                    # Doesn't approach to the goal while no collisions with other objects
+                    agent_deadlock_list = np.logical_and(agent_col_flag_list, 1 - self.reached_goal)
+                    agent_deadlock_ratio = 1.0 * np.sum(agent_deadlock_list) / self.num_agents
+
+                    # agent_col_rate
+                    # Collide with other drones and obstacles
+                    agent_col_ratio = 1.0 - np.sum(agent_col_flag_list) / self.num_agents
+
+                    # agent_neighbor_col_rate
+                    agent_neighbor_col_ratio = 1.0 - np.sum(self.agent_col_agent) / self.num_agents
+                    # agent_obst_col_rate
+                    agent_obst_col_ratio = 1.0 - np.sum(self.agent_col_obst) / self.num_agents
+
+                    for i in range(len(infos)):
+                        # agent_success_rate
+                        infos[i]['episode_extra_stats']['metric/agent_success_rate'] = agent_success_ratio
+                        infos[i]['episode_extra_stats'][f'{scenario_name}/agent_success_rate'] = agent_success_ratio
+                        # agent_deadlock_rate
+                        infos[i]['episode_extra_stats']['metric/agent_deadlock_rate'] = agent_deadlock_ratio
+                        infos[i]['episode_extra_stats'][f'{scenario_name}/agent_deadlock_rate'] = agent_deadlock_ratio
+                        # agent_col_rate
+                        infos[i]['episode_extra_stats']['metric/agent_col_rate'] = agent_col_ratio
+                        infos[i]['episode_extra_stats'][f'{scenario_name}/agent_col_rate'] = agent_col_ratio
+                        # agent_neighbor_col_rate
+                        infos[i]['episode_extra_stats']['metric/agent_neighbor_col_rate'] = agent_neighbor_col_ratio
+                        infos[i]['episode_extra_stats'][f'{scenario_name}/agent_neighbor_col_rate'] = agent_neighbor_col_ratio
+                        # agent_obst_col_rate
+                        infos[i]['episode_extra_stats']['metric/agent_obst_col_rate'] = agent_obst_col_ratio
+                        infos[i]['episode_extra_stats'][f'{scenario_name}/agent_obst_col_rate'] = agent_obst_col_ratio
+
+                if self.test_logs:
+                    self.all_colisions_per_episode.append(self.collisions_per_episode)
+                    self.save_plot_info()
+                obs, _ = self.reset()
+                # terminate the episode for all "sub-envs"
+                dones = [True] * len(dones)
+            # return obs, rewards, dones, dones, infos
+            self.obs = obs
+
+            # ODO: remove later
+            # for i in range(self.num_agents):
+            #     rewards[i] = -np.linalg.norm(self.envs[i].dynamics.pos - self.envs[i].goal)
+
         return obs, rewards, dones, infos  # custom vec env
         # return obs[0], rewards[0], dones[0], infos[0]  # vec env
 

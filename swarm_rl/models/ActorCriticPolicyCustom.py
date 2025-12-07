@@ -51,7 +51,7 @@ class QuadrotorEnvConfig:
     encoder_extra_fc_layers = 0
     env_frameskip = 1
 
-    quads_num_agents: int = 4
+    quads_num_agents: int = 1
     quads_obs_repr: str = 'xyz_vxyz_R_omega'
     quads_episode_duration: float = 15.0
     quads_encoder_type: str = 'corl'
