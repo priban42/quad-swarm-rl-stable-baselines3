@@ -48,6 +48,7 @@ QUADS_PARAMS_DICT = {
     'o_dynamic_same_goal': [['circle_horizontal'], [0.0, 0.0]],
     'o_swap_goals': [QUADS_FORMATION_LIST_OBSTACLES, [8 * quad_arm_size, 16 * quad_arm_size]],
     'o_ep_rand_bezier': [['circle_horizontal'], [0.0, 0.0]],
+    'dynamic_same_goal_trajectory': [['circle_horizontal'], [0.0, 0.0]],
 }
 
 

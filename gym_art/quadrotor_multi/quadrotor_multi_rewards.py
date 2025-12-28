@@ -10,14 +10,14 @@ import cv2
 from gym_art.quadrotor_multi.aerodynamics.downwash import perform_downwash
 from gym_art.quadrotor_multi.collisions.obstacles import perform_collision_with_obstacle
 from gym_art.quadrotor_multi.collisions.quadrotors import calculate_collision_matrix, \
-    calculate_drone_proximity_penalties, perform_collision_between_drones
+    calculate_drone_proximity_penalties, perform_collision_between_drones, calculate_drone_formation_score
 from gym_art.quadrotor_multi.collisions.room import perform_collision_with_wall, perform_collision_with_ceiling
 from gym_art.quadrotor_multi.obstacles.utils import get_cell_centers
 from gym_art.quadrotor_multi.quad_utils import QUADS_OBS_REPR, QUADS_NEIGHBOR_OBS_TYPE
 
 from gym_art.quadrotor_multi.obstacles.obstacles import MultiObstacles
 from gym_art.quadrotor_multi.quadrotor_multi_visualization import Quadrotor3DSceneMulti
-from gym_art.quadrotor_multi.quadrotor_single_controller import QuadrotorSingle
+from gym_art.quadrotor_multi.quadrotor_single_rewards import QuadrotorSingle
 from gym_art.quadrotor_multi.scenarios.mix import create_scenario
 from sample_factory.utils.utils import experiment_dir
 
@@ -629,6 +629,9 @@ class QuadrotorEnvMulti(gym.Env):
             else:
                 rew_proximity = np.zeros(self.num_agents)
 
+            # rew_formation_score = -1.0 * calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents,)
+
+
             # 2) With obstacles
             rew_collisions_obst_quad = np.zeros(self.num_agents)
             if self.use_obstacles:
@@ -642,10 +645,15 @@ class QuadrotorEnvMulti(gym.Env):
                 self.collisions_wall_per_episode += len(wall_crash_list)
                 self.collisions_ceiling_per_episode += len(ceiling_crash_list)
 
+
+            # rew_collisions = np.zeros(self.num_agents)
+            # rew_proximity = np.zeros(self.num_agents)
+
             # Reward & Info
             for i in range(self.num_agents):
                 rewards[i] += rew_collisions[i]
                 rewards[i] += rew_proximity[i]
+
 
                 infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
                 infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]

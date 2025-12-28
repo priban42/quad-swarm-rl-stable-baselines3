@@ -2,16 +2,20 @@ import numpy as np
 from .Pid import PIDController
 from .references import *
 from .MultirotorModel import MultirotorModel, ModelParams, State
-
+from dataclasses import dataclass
 
 class AttitudeController:
+
+    @dataclass
     class Params:
-        def __init__(self):
-            self.kp = 6.0
-            self.kd = 0.05
-            self.ki = 0.01
-            self.max_rate_roll_pitch = 10.0  # rad/s
-            self.max_rate_yaw = 1.0         # rad/s
+        kp: float = 11.2081
+        kd: float = 0.0490
+        ki: float = 0.0073
+        # kp: float = 6.0
+        # kd: float = 0.05
+        # ki: float = 0.01
+        max_rate_roll_pitch: float = 10.0  # rad/s
+        max_rate_yaw: float = 1.0         # rad/s
 
     # -------------------------------------------------------------------
 

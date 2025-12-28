@@ -101,3 +101,24 @@ def calculate_drone_proximity_penalties(distance_matrix, collision_falloff_thres
         penalties[int(j)] += penalty
 
     return dt * penalties
+
+# @njit
+def calculate_drone_formation_score(positions, dt, num_agents):
+    """
+    check https://arxiv.org/pdf/2010.08193 (2) for reference
+    """
+    penalties = np.zeros(num_agents)
+    for i in range(num_agents):
+        i_penalty = 0
+        for j in range(num_agents):
+            i_penalty += np.dot(positions[i, :]/np.linalg.norm(positions[i, :]), positions[j, :]/np.linalg.norm(positions[j, :])) + 1
+        i_penalty -= 2
+        i_penalty /= num_agents
+        penalties[i] = i_penalty
+    # penalty_ratio = -max_penalty / collision_falloff_threshold
+    # for i, j, dist in distance_matrix:
+    #     penalty = penalty_ratio * dist + max_penalty
+    #     penalties[int(i)] += penalty
+    #     penalties[int(j)] += penalty
+
+    return dt * penalties

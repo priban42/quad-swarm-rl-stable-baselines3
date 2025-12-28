@@ -61,6 +61,12 @@ def compute_reward_weighted(dynamics, goal, action, dt, time_remain, rew_coeff, 
     cost_crash_raw = float(on_floor)
     cost_crash = rew_coeff["crash"] * cost_crash_raw
 
+    # modified
+    # cost_effort = 0
+    # cost_crash = 0
+    # cost_orient = 0
+    # cost_spin = 0
+
     reward = -dt * np.sum([
         cost_pos,
         cost_effort,
@@ -220,7 +226,7 @@ class QuadrotorSingle:
         self.resample_dynamics()
 
         # Self info
-        self.state_vector = self.state_vector = getattr(get_state, "state_" + self.obs_repr)
+        self.state_vector = getattr(get_state, "state_" + self.obs_repr)
         if use_obstacles:
             self.box = 0.1
         else:
@@ -298,13 +304,17 @@ class QuadrotorSingle:
         room_range = self.room_box[1] - self.room_box[0]
         self.obs_space_low_high = {
             "xyz": [-room_range, room_range],
+            "xy": [-room_range[:2], room_range[:2]],
             "xyzr": [-room_range, room_range],
             "vxyz": [-self.dynamics.vxyz_max * np.ones(3), self.dynamics.vxyz_max * np.ones(3)],
+            "vxy": [-self.dynamics.vxyz_max * np.ones(2), self.dynamics.vxyz_max * np.ones(2)],
             "vxyzr": [-self.dynamics.vxyz_max * np.ones(3), self.dynamics.vxyz_max * np.ones(3)],
             "acc": [-self.dynamics.acc_max * np.ones(3), self.dynamics.acc_max * np.ones(3)],
             "R": [-np.ones(9), np.ones(9)],
             "Rz": [-np.ones(3), np.ones(3)],
             "omega": [-self.dynamics.omega_max * np.ones(3), self.dynamics.omega_max * np.ones(3)],
+            "a": [-np.pi*np.ones(1), np.pi*np.ones(1)],
+            "adot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
             "t2w": [0. * np.ones(1), 5. * np.ones(1)],
             "t2t": [0. * np.ones(1), 1. * np.ones(1)],
             "h": [0. * np.ones(1), self.room_box[1][2] * np.ones(1)],
@@ -380,7 +390,9 @@ class QuadrotorSingle:
         current_state = State(self.dynamics.pos, self.dynamics.vel, v_prev, self.dynamics.rot, self.dynamics.omega, motors_rpm)
         if self.ref is None:
             # pca = self.pre_controller.update_vel(current_state, action, self.dt)
-            pca = self.pre_controller.update_vel_height(current_state, action, self.goal[2], self.dt)
+
+            # pca = self.pre_controller.update_vel_height(current_state, action, self.goal[2], self.dt)
+            pca = self.pre_controller.update_vel_height_dir(current_state, action, self.goal[2], self.dt)
             # pca = self.pre_controller.update_vel_height(current_state, np.clip((self.goal[:2] - self.dynamics.pos[:2])*1, -1, 1), self.goal[2], self.dt)
             # pca = self.pre_controller.update_pos(current_state, self.goal, self.dt)
         else:

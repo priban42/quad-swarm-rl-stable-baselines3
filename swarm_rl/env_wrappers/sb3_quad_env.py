@@ -34,12 +34,14 @@ class SB3QuadrotorEnv(gym.Env):
         seed=None,
         num_agents=1,
         episode_duration=15.0,
-        obs_repr="xyz_vxyz_R_omega",
+        # obs_repr="xyz_vxyz_R_omega",
+        obs_repr="xy_vxy_a_adot",
         neighbor_visible_num=-1,
         neighbor_obs_type="pos",
         collision_hitbox_radius=2.0,
         collision_falloff_radius=4.0,
         use_obstacles=False,
+        thrust_noise_ratio = 0.05,
         obst_density=0.2,
         obst_size=1.0,
         use_replay_buffer=False,
@@ -59,7 +61,7 @@ class SB3QuadrotorEnv(gym.Env):
     ):
         self.seed = seed
         self.env = self._make_env(
-            num_agents, episode_duration, obs_repr, neighbor_visible_num, neighbor_obs_type,
+            num_agents, episode_duration, obs_repr, neighbor_visible_num, neighbor_obs_type, thrust_noise_ratio,
             collision_hitbox_radius, collision_falloff_radius,
             use_obstacles, obst_density, obst_size,
             use_replay_buffer, quads_mode, use_downwash, use_numba, render_mode,quads_render,
@@ -72,14 +74,15 @@ class SB3QuadrotorEnv(gym.Env):
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
-    def _make_env(self, num_agents, episode_duration, obs_repr, neighbor_visible_num, neighbor_obs_type,
+    def _make_env(self, num_agents, episode_duration, obs_repr, neighbor_visible_num, neighbor_obs_type, thrust_noise_ratio,
                   collision_hitbox_radius, collision_falloff_radius,
                   use_obstacles, obst_density, obst_size,
                   use_replay_buffer, quads_mode, use_downwash, use_numba, render_mode,quads_render,
                   anneal_collision_steps, quads_collision_reward, quads_collision_smooth_max_penalty,
                   quads_obst_collision_reward, visualize_v_value, device, checkpoint_path):
 
-        from gym_art.quadrotor_multi.quadrotor_multi_controller import QuadrotorEnvMulti
+        # from gym_art.quadrotor_multi.quadrotor_multi_controller import QuadrotorEnvMulti
+        from gym_art.quadrotor_multi.quadrotor_multi_rewards import QuadrotorEnvMulti
 
         # --- 1. Base env ---
         quad = "Crazyflie"
@@ -98,7 +101,7 @@ class SB3QuadrotorEnv(gym.Env):
             sampler_1 = dict(type="RelativeSampler", noise_ratio=dyn_randomization_ratio, sampler="normal")
 
         dynamics_change = dict(
-            noise=dict(thrust_noise_ratio=0.05),
+            noise=dict(thrust_noise_ratio=thrust_noise_ratio),
             damp=dict(vel=0, omega_quadratic=0)
         )
 

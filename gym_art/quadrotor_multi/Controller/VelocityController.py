@@ -16,9 +16,12 @@ class VelocityController:
 
     @dataclass
     class Params:
-        kp: float = 1.0
-        kd: float = 0.5
-        ki: float = 0.1
+        kp: float = 2.4531
+        kd: float = 0.0003
+        ki: float = 0.0382
+        # kp: float = 1.0
+        # kd: float = 0.5
+        # ki: float = 0.1
         max_acceleration: float = 40.0   # m/s^2
 
     # --------------------------------------------------------

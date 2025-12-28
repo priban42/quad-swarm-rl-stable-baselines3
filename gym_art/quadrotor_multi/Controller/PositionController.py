@@ -10,9 +10,12 @@ class PositionController:
 
     @dataclass
     class Params:
-        kp: float = 6.0
-        kd: float = 0.3
-        ki: float = 3.0
+        kp:float = 4.1625
+        kd:float = 0.5473
+        ki:float = 0.0023
+        # kp: float = 6.0
+        # kd: float = 0.3
+        # ki: float = 3.0
         max_velocity: float = 6.0   # m/s
 
     # --------------------------------------------------------

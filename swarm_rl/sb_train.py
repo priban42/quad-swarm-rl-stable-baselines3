@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument("--num_envs", type=int, default=48)
     parser.add_argument("--total_timesteps", type=int, default=150_000_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--logdir", type=str, default="./PPO_1_controller")
+    parser.add_argument("--logdir", type=str, default="./PPO_1_rewards")
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
     parser.add_argument("--algo", type=str, default="ppo", choices=["ppo", "a2c", "sac"])
     parser.add_argument("--eval_freq", type=int, default=100_000)
@@ -73,7 +73,7 @@ def main():
 
     def make_env_fn(rank, seed=0):
         def _init():
-            env = SB3QuadrotorEnv(num_agents=num_of_agents)
+            env = SB3QuadrotorEnv(num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory")
             return env
         return _init
 

@@ -88,6 +88,8 @@ class QuadrotorDynamics:
             self.control_mx = np.array([[1., 0.], [1., 0.], [0., 1.], [0., 1.]])
         elif self.dim_mode == '3D':
             self.control_mx = np.eye(4)
+        elif self.dim_mode == '2D_horizontal':
+            self.control_mx = np.eye(4)
         else:
             raise ValueError('QuadEnv: Unknown dimensionality mode %s' % self.dim_mode)
 

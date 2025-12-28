@@ -10,9 +10,12 @@ class RateController:
 
     @dataclass
     class Params:
-        kp: float = 4.0
-        kd: float = 0.04
-        ki: float = 0.0
+        kp: float = 3.1222
+        kd: float = 0.0477
+        ki: float = 0.0001
+        # kp: float = 4.0
+        # kd: float = 0.04
+        # ki: float = 0.0
 
     # ----------------------------------------------------------------------
 
