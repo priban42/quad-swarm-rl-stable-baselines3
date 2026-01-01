@@ -29,7 +29,7 @@ OBST_COLOR_4 = (0., 0.5, 0., 1.)
 
 QUADS_OBS_REPR = {
     'xyz_vxyz_R_omega': 18,
-    'xy_vxy_a_adot': 6,
+    'aw_awdot_xy_vxy_a_adot': 8,
     'xyz_vxyz_R_omega_floor': 19,
     'xyz_vxyz_R_omega_wall': 24,
 }

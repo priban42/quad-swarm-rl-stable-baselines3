@@ -27,7 +27,7 @@ class Controller:
         self.log_dict = {"state":[], "ref":[], "ctrl":[]}
         self.angle = 0
         self.angular_velocity = 0
-        self.MAX_ANGULAR_RATE = 1  # π/10 per timestep viz  https://arxiv.org/pdf/2010.08193 V. SIMULATION EXPERIMENTS
+        self.MAX_ANGULAR_RATE = (np.pi*80/180)  # π/10 per timestep viz  https://arxiv.org/pdf/2010.08193 V. SIMULATION EXPERIMENTS
 
     def reset_all_pids(self):
         self.position_controller.initialize_pids()
@@ -78,9 +78,12 @@ class Controller:
         command = [angular_velocity, linear_velocity]
         '''
         self.angular_velocity = command[0]
-        self.angle = self.angle + command[0]*dt*self.MAX_ANGULAR_RATE
+        # self.angle = (self.angle + command[0]*dt*self.MAX_ANGULAR_RATE)
+        self.angle = command[0]*np.pi
+        # self.angle = (self.angle + 1*dt*self.MAX_ANGULAR_RATE)
+        self.angle = (self.angle + np.pi)%(2*np.pi) - np.pi
         dir_vec = np.array([np.cos(self.angle), np.sin(self.angle)])
-        velocity = (command[1] + 1)*2
+        velocity = (command[1] + 1)*0.3
         position_cmd = Position(position=np.array([0, 0, height]), heading=0.0)
         velocity_hdg_cmd = self.position_controller.get_control_signal(state, position_cmd, dt)
         velocity_hdg_cmd.velocity[:2] = dir_vec*velocity

@@ -526,7 +526,7 @@ class QuadrotorEnvMulti(gym.Env):
         # return obs
 
     def step(self, actions):
-        for substep in range(1):
+        for substep in range(8):
             obs, rewards, dones, infos = [], [], [], []
 
             for i, a in enumerate(np.atleast_2d(actions)):

@@ -10,6 +10,19 @@ def parse_csv_to_numpy(filepath):
     data = np.loadtxt(filepath, delimiter=",", skiprows=1)
     return data, header
 
+def interpolate_nd(coords, scale):
+    n, d = coords.shape
+    new_n = int(np.round(n * scale))
+
+    old_t = np.linspace(0, 1, n)
+    new_t = np.linspace(0, 1, new_n)
+
+    new_coords = np.empty((new_n, d))
+    for i in range(d):
+        new_coords[:, i] = np.interp(new_t, old_t, coords[:, i])
+
+    return new_coords
+
 class Scenario_dynamic_same_goal_trajectory(QuadrotorScenario):
     def __init__(self, quads_mode, envs, num_agents, room_dims, rng=None):
         super().__init__(quads_mode, envs, num_agents, room_dims, rng)
@@ -17,7 +30,7 @@ class Scenario_dynamic_same_goal_trajectory(QuadrotorScenario):
         duration_time = 5.0
         self.control_step_for_sec = int(duration_time * self.envs[0].control_freq)
         self.trajectory, header = parse_csv_to_numpy(Path(__file__).resolve().parent/f"trajectories/trajectory_{45}.csv")
-        pass
+        self.trajectory = interpolate_nd(self.trajectory, 4)
 
     def update_formation_size(self, new_formation_size):
         pass
