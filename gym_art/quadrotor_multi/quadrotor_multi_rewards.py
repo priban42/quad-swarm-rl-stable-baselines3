@@ -629,7 +629,7 @@ class QuadrotorEnvMulti(gym.Env):
             else:
                 rew_proximity = np.zeros(self.num_agents)
 
-            # rew_formation_score = -1.0 * calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents,)
+            rew_formation_score = - calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
 
 
             # 2) With obstacles

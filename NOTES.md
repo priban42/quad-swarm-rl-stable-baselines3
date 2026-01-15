@@ -5,6 +5,8 @@ micromamba activate swarm-rl
 {topdown,chase,side,global,corner0,corner1,corner2,corner3,topdownfollow}
 https://graphite.dev/guides/git-pull-overwrite-local-changes#how-to-overwrite-local-changes-with-git-pull
 launch on cluster:
+https://login.rci.cvut.cz/wiki/how_to_start
+ssh pribavoj@login3.rci.cvut.cz
 git reset --hard && git pull
 source ~/start-quad.sh
 srun -p gpufast --gres=gpu:1 -n 33  --pty bash -i
@@ -14,6 +16,7 @@ sbatch experiment_slurm.sh  # run the experiment
 squeue -u $USER  # check the job status
 scancel 10182533  # cancel job
 
+tensorboard --logdir ./swarm_rl/PPO_1_ang/tb/PPO_1
 
 train wandb:
 python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=4 --pause_between=1 --experiments_per_gpu=4 --num_gpus=1

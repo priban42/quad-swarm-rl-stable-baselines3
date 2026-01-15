@@ -15,13 +15,13 @@ from stable_baselines3.common.env_util import make_vec_env
 from swarm_rl.env_wrappers.MetaQuadFactory import MetaQuadFactory
 from gym_art.quadrotor_multi.quadrotor_instance import QuadrotorEnvInstance
 
-from sample_factory.model.actor_critic import ActorCriticSharedWeights
+# from sample_factory.model.actor_critic import ActorCriticSharedWeights
 # from swarm_rl.env_wrappers.quad_utils import make_quadrotor_env
 from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_envs", type=int, default=48)
+    parser.add_argument("--num_envs", type=int, default=6)
     parser.add_argument("--total_timesteps", type=int, default=150_000_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
     parser.add_argument("--logdir", type=str, default="./PPO_1_ang")

@@ -1,7 +1,7 @@
 numpy
 matplotlib>=3.9.2
 numba>=0.60.0
-pyglet>=1.5.23
+pyglet>=1.5.23,<=1.5.27
 gym>=0.26.2
 gymnasium>=0.28.1
 transforms3d>=0.4.2
@@ -10,10 +10,11 @@ tqdm>=4.66.5
 Cython
 scipy
 sample-factory>=2.1.1
+stable-baselines3
 plotly>=5.24.1
 attrdict>=2.0.1
 pandas
-torch
+torch==2.5.0
 typeguard>=4.3.0
 osqp>=0.6.7
 bezier>=2023.7.28
