@@ -93,7 +93,8 @@ class SB3QuadrotorEnv(gym.Env):
         sense_noise = "default"
         room_dims = [10, 10, 3]
         obst_spawn_area = [(-4, 4), (-4, 4), (0, 3)]
-        quads_view_mode = ["global"]
+        # quads_view_mode = ["global"]
+        quads_view_mode = ["topdown"]
         # quads_render = False
 
         sampler_1 = None

@@ -35,7 +35,8 @@ def _worker(  # noqa: C901
             if cmd == "step":
                 observation, reward, terminated, truncated, info = env.step(data)
                 # convert to SB3 VecEnv api
-                done = terminated or truncated
+                # done = terminated or truncated
+                done = np.array(terminated) | np.array(truncated)
                 # info["TimeLimit.truncated"] = truncated and not terminated
                 if isinstance(info, list):
                     if any(done):

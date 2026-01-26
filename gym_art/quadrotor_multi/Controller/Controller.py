@@ -83,7 +83,8 @@ class Controller:
         # self.angle = (self.angle + 1*dt*self.MAX_ANGULAR_RATE)
         self.angle = (self.angle + np.pi)%(2*np.pi) - np.pi
         dir_vec = np.array([np.cos(self.angle), np.sin(self.angle)])
-        velocity = (command[1] + 1)*0.3
+        # velocity = (command[1] + 1)*0.1
+        velocity = 0.2
         position_cmd = Position(position=np.array([0, 0, height]), heading=0.0)
         velocity_hdg_cmd = self.position_controller.get_control_signal(state, position_cmd, dt)
         velocity_hdg_cmd.velocity[:2] = dir_vec*velocity

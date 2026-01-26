@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument("--num_envs", type=int, default=6)
     parser.add_argument("--total_timesteps", type=int, default=150_000_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--logdir", type=str, default="./PPO_1_ang")
+    parser.add_argument("--logdir", type=str, default="./PPO_4_ang")
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
     parser.add_argument("--algo", type=str, default="ppo", choices=["ppo", "a2c", "sac"])
     parser.add_argument("--eval_freq", type=int, default=100_000)

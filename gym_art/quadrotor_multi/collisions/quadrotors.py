@@ -108,15 +108,13 @@ def calculate_drone_formation_score(positions, dt, num_agents, target_pos):
     check https://arxiv.org/pdf/2010.08193 (2) for reference
     """
     penalties = np.zeros(num_agents)
-    relative_pos = (target_pos-positions)[:, :2]  # in 2d
-    relative_pos_normalized = relative_pos/np.linalg.norm(relative_pos, axis=1)
-    closest_agent = np.argmin(np.linalg.norm(relative_pos), axis=1)
+    relative_pos = (target_pos - positions)[:, :2]  # in 2d
+    relative_pos_normalized = relative_pos/np.linalg.norm(relative_pos, axis=1)[np.newaxis].T
+    closest_agent = np.argmin(np.linalg.norm(relative_pos, axis=1))
     penalty = 0
     for j in range(num_agents):
-        penalty = np.dot(relative_pos_normalized[closest_agent], relative_pos_normalized[j]) + 1
+        penalty += np.dot(relative_pos_normalized[closest_agent], relative_pos_normalized[j]) + 1
         # i_penalty += np.dot(positions[i, :]/np.linalg.norm(positions[i, :]), positions[j, :]/np.linalg.norm(positions[j, :])) + 1
     penalty -= 2  # remove the penalty calculated for the closest agent
     penalty /= num_agents
-    penalties = np.ones(num_agents)*penalty
-
-    return dt * penalties
+    return penalty

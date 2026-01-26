@@ -225,7 +225,8 @@ class QuadrotorEnvMulti(gym.Env):
         self.all_colisions_per_episode = []
 
         # Others
-        self.apply_collision_force = True
+        # self.apply_collision_force = True
+        self.apply_collision_force = False
 
     def all_dynamics(self):
         return tuple(e.dynamics for e in self.envs)
@@ -554,8 +555,8 @@ class QuadrotorEnvMulti(gym.Env):
             new_quad_collision = np.array([x for x in curr_drone_collisions if tuple(x) not in old_quad_collision])
 
             self.last_step_unique_collisions = np.setdiff1d(curr_drone_collisions, self.prev_drone_collisions)
-            if len(self.last_step_unique_collisions) > 0:
-                print("collision detected")
+            # if len(self.last_step_unique_collisions) > 0:
+            #     print("collision detected")
             # # Filter distance_matrix; Only contains quadrotor pairs with distance <= self.collision_threshold
             near_quad_ids = np.where(distance_matrix[:, 2] <= self.collision_falloff_threshold)
             distance_matrix = distance_matrix[near_quad_ids]
@@ -629,7 +630,21 @@ class QuadrotorEnvMulti(gym.Env):
             else:
                 rew_proximity = np.zeros(self.num_agents)
 
-            rew_formation_score = - calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
+            wq = 0.1
+            wd = 0.2  # 0.002
+            w_captor = 100
+            w_helper = 10
+            rew_formation_score = -wq*np.ones(self.num_agents)*calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
+            rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :2], axis=1)
+            rew_proximity_custom = -wd*rel_distances
+            capture_radius = 0.5  # m
+            rew_captor = np.zeros(self.num_agents)
+            rew_helper = np.zeros(self.num_agents)
+            if np.any(capture_radius > rel_distances):
+                rew_captor += w_captor*(capture_radius > rel_distances)
+                rew_helper += w_helper*(capture_radius < rel_distances)
+                dones = capture_radius > rel_distances
+                print("target caught")
 
 
             # 2) With obstacles
@@ -651,9 +666,12 @@ class QuadrotorEnvMulti(gym.Env):
 
             # Reward & Info
             for i in range(self.num_agents):
-                rewards[i] += rew_collisions[i]
-                rewards[i] += rew_proximity[i]
-
+                # rewards[i] += rew_collisions[i]
+                # rewards[i] += rew_proximity[i]
+                rewards[i] += rew_formation_score[i]
+                rewards[i] += rew_proximity_custom[i]
+                rewards[i] += rew_captor[i]
+                rewards[i] += rew_helper[i]
 
                 infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
                 infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]
@@ -816,7 +834,7 @@ class QuadrotorEnvMulti(gym.Env):
                     agent_success_ratio = 1.0 * np.sum(agent_success_flag_list) / self.num_agents
 
                     # agent_deadlock_rate
-                    # Doesn't approach to the goal while no collisions with other objects
+                    # self.collisions_per_episodeDoesn't approach to the goal while no collisions with other objects
                     agent_deadlock_list = np.logical_and(agent_col_flag_list, 1 - self.reached_goal)
                     agent_deadlock_ratio = 1.0 * np.sum(agent_deadlock_list) / self.num_agents
 
@@ -852,6 +870,7 @@ class QuadrotorEnvMulti(gym.Env):
                 obs, _ = self.reset()
                 # terminate the episode for all "sub-envs"
                 dones = [True] * len(dones)
+                print(f"episode done, tick={self.envs[0].tick}, {self.collisions_per_episode=}")
             # return obs, rewards, dones, dones, infos
             self.obs = obs
 
