@@ -55,7 +55,7 @@ class QuadrotorEnvConfig:
 
     quads_num_agents: int = 4
     # quads_obs_repr: str = 'xyz_vxyz_R_omega'
-    quads_obs_repr: str = 'aw_awdot_xy_vxy_a_adot'
+    quads_obs_repr: str = 'aw_awdot_dist_distdot_a_adot'
     quads_episode_duration: float = 15.0
     quads_encoder_type: str = 'corl'
 
@@ -96,7 +96,7 @@ class QuadrotorEnvConfig:
     quads_use_downwash: bool = False
 
     # Numba Speed Up
-    quads_use_numba: bool = False
+    quads_use_numba: bool = True
 
     # Scenarios
     quads_mode: str = 'mix'

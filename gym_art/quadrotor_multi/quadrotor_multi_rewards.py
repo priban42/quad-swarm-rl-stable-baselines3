@@ -23,6 +23,9 @@ from sample_factory.utils.utils import experiment_dir
 
 import pickle
 
+
+
+
 class QuadrotorEnvMulti(gym.Env):
     def __init__(self, num_agents, ep_time, rew_coeff, obs_repr,
                  cfg,
@@ -41,11 +44,10 @@ class QuadrotorEnvMulti(gym.Env):
                  dynamics_randomize_every, dynamics_change, dyn_sampler_1,
                  sense_noise, init_random_state,
                  # Rendering
-                 render_mode='human',
+                 render_mode='human', curriculum_param=None
                  ):
         super().__init__()
-
-
+        self.curriculum_param = curriculum_param
         # Predefined Parameters
         self.cfg = cfg
         self.rng = np.random.default_rng(seed=self.cfg.seed)
@@ -227,6 +229,7 @@ class QuadrotorEnvMulti(gym.Env):
         # Others
         # self.apply_collision_force = True
         self.apply_collision_force = False
+        self.episode_success = False
 
     def all_dynamics(self):
         return tuple(e.dynamics for e in self.envs)
@@ -473,6 +476,7 @@ class QuadrotorEnvMulti(gym.Env):
             else:
                 e.spawn_point = self.scenario.spawn_points[i]
             e.rew_coeff = self.rew_coeff
+            e.pre_controller.angle = (self.rng.random(1)[0]-0.5)*2*np.pi
 
             observation = e.reset()
             obs.append(observation)
@@ -522,9 +526,12 @@ class QuadrotorEnvMulti(gym.Env):
             self.quads_formation_size = self.scenario.formation_size
             self.all_collisions = {val: [0.0 for _ in range(len(self.envs))] for val in ['drone', 'ground', 'obstacle']}
 
-        return obs, {}  # custom vec env
+        reset_info = {"success":self.episode_success}
+        self.episode_success = False
+        return obs, reset_info  # custom vec env
         # return obs[0], {}  # vec env
         # return obs
+
 
     def step(self, actions):
         for substep in range(8):
@@ -535,7 +542,8 @@ class QuadrotorEnvMulti(gym.Env):
 
                 observation, reward, done, info = self.envs[i].step(a)
                 obs.append(observation)
-                rewards.append(reward)
+                # rewards.append(reward)
+                rewards.append(0)
                 dones.append(done)
                 infos.append(info)
 
@@ -631,13 +639,16 @@ class QuadrotorEnvMulti(gym.Env):
                 rew_proximity = np.zeros(self.num_agents)
 
             wq = 0.1
-            wd = 0.2  # 0.002
+            wd = 0.002  # 0.002
             w_captor = 100
             w_helper = 10
             rew_formation_score = -wq*np.ones(self.num_agents)*calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
             rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :2], axis=1)
             rew_proximity_custom = -wd*rel_distances
-            capture_radius = 0.5  # m
+            if self.curriculum_param is not None:
+                capture_radius = self.curriculum_param.value
+            else:
+                capture_radius = 0.2  # m
             rew_captor = np.zeros(self.num_agents)
             rew_helper = np.zeros(self.num_agents)
             if np.any(capture_radius > rel_distances):
@@ -645,6 +656,7 @@ class QuadrotorEnvMulti(gym.Env):
                 rew_helper += w_helper*(capture_radius < rel_distances)
                 dones = capture_radius > rel_distances
                 print("target caught")
+                self.episode_success = True
 
 
             # 2) With obstacles
@@ -673,16 +685,16 @@ class QuadrotorEnvMulti(gym.Env):
                 rewards[i] += rew_captor[i]
                 rewards[i] += rew_helper[i]
 
-                infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
-                infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]
-                infos[i]["rewards"]["rewraw_quadcol"] = rew_collisions_raw[i]
+                # infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
+                # infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]
+                # infos[i]["rewards"]["rewraw_quadcol"] = rew_collisions_raw[i]
 
                 if self.use_obstacles:
                     rewards[i] += rew_collisions_obst_quad[i]
                     infos[i]["rewards"]["rew_quadcol_obstacle"] = rew_collisions_obst_quad[i]
                     infos[i]["rewards"]["rewraw_quadcol_obstacle"] = rew_obst_quad_collisions_raw[i]
 
-                self.distance_to_goal[i].append(-infos[i]["rewards"]["rewraw_pos"])
+                # self.distance_to_goal[i].append(-infos[i]["rewards"]["rewraw_pos"])
                 if len(self.distance_to_goal[i]) >= 5 and \
                         np.mean(self.distance_to_goal[i][-5:]) / self.envs[0].dt < self.scenario.approch_goal_metric \
                         and not self.reached_goal[i]:
@@ -867,17 +879,13 @@ class QuadrotorEnvMulti(gym.Env):
                 if self.test_logs:
                     self.all_colisions_per_episode.append(self.collisions_per_episode)
                     self.save_plot_info()
-                obs, _ = self.reset()
+                print(f"episode done, tick={self.envs[0].tick}, {self.collisions_per_episode=}")
+                # obs, _ = self.reset()
                 # terminate the episode for all "sub-envs"
                 dones = [True] * len(dones)
-                print(f"episode done, tick={self.envs[0].tick}, {self.collisions_per_episode=}")
+                break
             # return obs, rewards, dones, dones, infos
             self.obs = obs
-
-            # ODO: remove later
-            # for i in range(self.num_agents):
-            #     rewards[i] = -np.linalg.norm(self.envs[i].dynamics.pos - self.envs[i].goal)
-
         return obs, rewards, dones, infos  # custom vec env
         # return obs[0], rewards[0], dones[0], infos[0]  # vec env
 
@@ -972,13 +980,15 @@ class QuadrotorEnvMulti(gym.Env):
         if self.render_mode == "rgb_array":
             # self.pos
             text1 = f"pos:{self.pos[0][0]:.3f}, {self.pos[0][1]:.3f}, {self.pos[0][2]:.3f}"
-            text2 = f"action:{self.envs[0].actions[0][0]:.2f}, {self.envs[0].actions[0][1]:.2f}, {self.envs[0].actions[0][2]:.2f}, {self.envs[0].actions[0][3]:.2f}"
+            text2 = f"target:{self.envs[0].goal[0]:.2f}, {self.envs[0].goal[1]:.2f}, {self.envs[0].goal[2]:.2f}"
             # text3 = f"omega:{self.envs[0].dynamics.omega[0]:.3f}, {self.envs[0].dynamics.omega[1]:.3f}, {self.envs[0].dynamics.omega[2]:.3f}"
-            text3 = f"omega:{self.envs[0].dynamics.omega[0]:.3f}, {self.envs[0].dynamics.omega[1]:.3f}, {self.envs[0].dynamics.omega[2]:.3f}"
+            text3 = f"ang:{self.envs[0].pre_controller.angle*180/np.pi:.2f} deg"
+            text4 = f"ang_vel:{self.envs[0].pre_controller.angular_velocity*180/np.pi:.2f} deg/s"
             frame = np.ascontiguousarray(frame)
-            cv2.putText(frame, text1, (10, 410), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-            cv2.putText(frame, text2, (10, 430), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-            cv2.putText(frame, text3, (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text1, (10, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text2, (10, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text3, (10, 440), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text4, (10, 460), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
             return frame
 
     def __deepcopy__(self, memo):

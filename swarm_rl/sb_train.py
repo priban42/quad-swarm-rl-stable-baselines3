@@ -7,10 +7,11 @@ import sys
 import argparse
 import os
 from stable_baselines3 import PPO, SAC
-from stable_baselines3.common.vec_env import SubprocVecEnv, DummyVecEnv, VecMonitor
+from stable_baselines3.common.vec_env import SubprocVecEnv, VecMonitor
 from swarm_rl.env_wrappers.subproc_vec_env_custom import SubprocVecEnvCustom
 from stable_baselines3.common.policies import ActorCriticCnnPolicy, ActorCriticPolicy, BasePolicy, MultiInputActorCriticPolicy
-from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+# from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+from swarm_rl.custom_callbacks import CheckpointCallback, EvalCallback, CurriculumCallback
 from stable_baselines3.common.env_util import make_vec_env
 from swarm_rl.env_wrappers.MetaQuadFactory import MetaQuadFactory
 from gym_art.quadrotor_multi.quadrotor_instance import QuadrotorEnvInstance
@@ -18,11 +19,14 @@ from gym_art.quadrotor_multi.quadrotor_instance import QuadrotorEnvInstance
 # from sample_factory.model.actor_critic import ActorCriticSharedWeights
 # from swarm_rl.env_wrappers.quad_utils import make_quadrotor_env
 from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv
+from swarm_rl.env_wrappers.custom_dummy_vec_env import DummyVecEnv
+import multiprocessing as mp
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_envs", type=int, default=6)
+    parser.add_argument("--num_envs", type=int, default=30)
     parser.add_argument("--total_timesteps", type=int, default=150_000_000)
+    # parser.add_argument("--total_timesteps", type=int, default=300_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
     parser.add_argument("--logdir", type=str, default="./PPO_4_ang")
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
@@ -71,22 +75,17 @@ def main():
     cfg = QuadrotorEnvConfig()
     num_of_agents = cfg.quads_num_agents
 
+    manager = mp.Manager()
+    # shared_curriculum_param = manager.Value('d', 3.0)
+    shared_curriculum_param = manager.Value('d', 0.2)
+
     def make_env_fn(rank, seed=0):
         def _init():
-            env = SB3QuadrotorEnv(num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory")
+            env = SB3QuadrotorEnv(num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory", curriculum_param=shared_curriculum_param)
             return env
         return _init
 
-    # 1. Create parallel vectorized environment
-    # meta_quad_factory = MetaQuadFactory()
-    # meta_quad_factory.initialize()
-
-    # env = DummyVecEnv([make_env_fn(i) for i in range(args.num_envs*num_of_agents)])
-    # eval_env = DummyVecEnv([make_env_fn(i) for i in range(1*num_of_agents)])
-
-    # env = SubprocVecEnv([make_env_fn(i) for i in range(args.num_envs*num_of_agents)])
-    # eval_env = SubprocVecEnv([make_env_fn(i) for i in range(1*num_of_agents)])
-
+    # env = DummyVecEnv([make_env_fn(i) for i in range(args.num_envs * num_of_agents)])
     env = SubprocVecEnvCustom([make_env_fn(i) for i in range(args.num_envs)], agents_per_env=num_of_agents)
     eval_env = SubprocVecEnvCustom([make_env_fn(i) for i in range(1)], agents_per_env=num_of_agents)
 
@@ -150,10 +149,19 @@ def main():
         render=False,
     )
 
+    curriculum_callback = CurriculumCallback(
+        shared_param=shared_curriculum_param,
+        eval_env=eval_env,
+        save_path=args.logdir,
+        eval_freq=1000,
+        n_eval_episodes=10,
+    )
+
     # 4. Train
     model.learn(
         total_timesteps=args.total_timesteps,
-        callback=[checkpoint_callback, eval_callback]
+        callback=[checkpoint_callback, eval_callback, curriculum_callback]
+        # callback=[checkpoint_callback, eval_callback]
     )
 
     # 5. Save

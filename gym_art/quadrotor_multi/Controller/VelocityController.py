@@ -36,6 +36,7 @@ class VelocityController:
         self.pid_z = PIDController()
 
         self.initialize_pids()
+        self.out = AccelerationHdg()
 
     # --------------------------------------------------------
 
@@ -76,8 +77,10 @@ class VelocityController:
         acc[1] = self.pid_y.update(vel_error[1], dt)
         acc[2] = self.pid_z.update(vel_error[2], dt)
 
-        return AccelerationHdg(acceleration=acc,
-                               heading=reference.heading)
+        self.out.acceleration = acc
+        self.out.heading = reference.heading
+
+        return self.out
 
     # --------------------------------------------------------
     # getControlSignal for Velocity + Heading Rate

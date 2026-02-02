@@ -31,6 +31,8 @@ class PositionController:
 
         self.initialize_pids()
 
+        self.out = VelocityHdg()
+
     # --------------------------------------------------------
 
     def set_params(self, params: Params):
@@ -69,7 +71,7 @@ class PositionController:
         vel[1] = self.pid_y.update(pos_error[1], dt)
         vel[2] = self.pid_z.update(pos_error[2], dt)
 
-        return VelocityHdg(
-            velocity=vel,
-            heading=reference.heading
-        )
+        self.out.velocity = vel
+        self.out.heading = reference.heading
+
+        return self.out

@@ -72,14 +72,15 @@ class Controller:
         #     pass
         return actuators_cmd.motors
 
+
     def update_vel_height_dir(self, state, command, height, dt):
         '''
         inspired by https://arxiv.org/pdf/2304.03443
         command = [angular_velocity, linear_velocity]
         '''
         self.angular_velocity = command[0]
-        # self.angle = (self.angle + command[0]*dt*self.MAX_ANGULAR_RATE)
-        self.angle = command[0]*np.pi
+        self.angle = (self.angle + self.angular_velocity*dt*self.MAX_ANGULAR_RATE)
+        # self.angle = command[0]*np.pi
         # self.angle = (self.angle + 1*dt*self.MAX_ANGULAR_RATE)
         self.angle = (self.angle + np.pi)%(2*np.pi) - np.pi
         dir_vec = np.array([np.cos(self.angle), np.sin(self.angle)])

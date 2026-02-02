@@ -19,6 +19,7 @@ References:
 """
 import copy
 
+import numpy as np
 from gymnasium.utils import seeding
 
 import gym_art.quadrotor_multi.get_state as get_state
@@ -30,6 +31,8 @@ from .Controller.Controller import Controller
 from .Controller.MultirotorModel import State
 
 from .Controller.references import *
+
+
 
 GRAV = 9.81  # default gravitational constant
 
@@ -292,7 +295,7 @@ class QuadrotorSingle:
 
         # ACTIONS
         # self.action_space = self.controller.action_space(self.dynamics)
-        # self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+        self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
         self.action_space = self.controller.action_space(self.dynamics)
 
         # self.action_space = spaces.Box(-np.ones(2), np.ones(2), dtype=np.float32)
@@ -315,6 +318,8 @@ class QuadrotorSingle:
             "omega": [-self.dynamics.omega_max * np.ones(3), self.dynamics.omega_max * np.ones(3)],
             "a": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "aw": [-np.pi*np.ones(1), np.pi*np.ones(1)],
+            "dist": [-self.dynamics.vxyz_max* np.ones(1)*(3**0.5), self.dynamics.vxyz_max* np.ones(1)*(3**0.5)],
+            "distdot": [-self.dynamics.vxyz_max * np.ones(1), self.dynamics.vxyz_max * np.ones(1)],
             "adot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
             "awdot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
             "t2w": [0. * np.ones(1), 5. * np.ones(1)],
@@ -383,6 +388,7 @@ class QuadrotorSingle:
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
+
     def _step(self, action):
 
         v_prev = (self.dynamics.vel - self.dt * (self.dynamics.rot @ self.dynamics.acc - np.array([0.0, 0.0, self.gravity])))
@@ -400,52 +406,29 @@ class QuadrotorSingle:
         else:
             pca = self.pre_controller.test_step_response(current_state, self.dt, ref=self.ref,file_name="vel_response.p")
             self.response = current_state
-        # ref = Position(position=self.init_state[0] + np.array([0.5, 0, 0]), heading=0)
-        # pca = self.pre_controller.test_step_response(current_state, self.dt, position_cmd=ref,file_name="pos_response.p")
-
-        # ref = VelocityHdg(velocity=np.array([0.2, 0, 0]), heading=0)
-
-
-        # ref = AccelerationHdg(acceleration=np.array([0.2, 0, 0]), heading=0)
-        # pca = self.pre_controller.test_step_response(current_state, self.dt, acceleration_hdg_cmd=ref, file_name="acc_response.p")
-
-        # def rotation_x(theta):
-        #     """Return 3×3 rotation matrix for rotation around the X-axis by angle theta (radians)."""
-        #     c = np.cos(theta)
-        #     s = np.sin(theta)
-        #     return np.array([
-        #         [1, 0, 0],
-        #         [0, c, -s],
-        #         [0, s, c]
-        #     ])
-
-        # ref = Attitude(orientation=rotation_x(0.1), throttle=0.6)
-        # pca = self.pre_controller.test_step_response(current_state, self.dt, attitude_cmd=ref, file_name="att_response.p")
-
-        # ref = AttitudeRate(rate_x=1, rate_y=0, rate_z=0, throttle=0.6)
-        # pca = self.pre_controller.test_step_response(current_state, self.dt, attitude_rate_cmd=ref, file_name="att_rate_response.p")
 
         reordered_pre_controlled_action = np.array([pca[0], pca[3], pca[1], pca[2]])*2 - 1
         custom_action = np.arctan(reordered_pre_controlled_action)
 
         # custom_action = action
         # custom_action = np.ones(4)*0.07
-        self.actions[1] = copy.deepcopy(self.actions[0])
-        self.actions[0] = copy.deepcopy(custom_action)
+        self.actions[1] = self.actions[0].copy() #  copy.deepcopy(self.actions[0])
+        self.actions[0] = custom_action.copy()  # copy.deepcopy(custom_action)
 
         self.controller.step_func(dynamics=self.dynamics, action=custom_action, goal=self.goal, dt=self.dt, observation=None)
 
         self.time_remain = self.ep_len - self.tick
-        reward, rew_info = compute_reward_weighted(
-            dynamics=self.dynamics, goal=self.goal, action=custom_action, dt=self.dt, time_remain=self.time_remain,
-            rew_coeff=self.rew_coeff, action_prev=self.actions[1], on_floor=self.dynamics.on_floor)
+        # reward, rew_info = compute_reward_weighted(
+        #     dynamics=self.dynamics, goal=self.goal, action=custom_action, dt=self.dt, time_remain=self.time_remain,
+        #     rew_coeff=self.rew_coeff, action_prev=self.actions[1], on_floor=self.dynamics.on_floor)
 
         self.tick += 1
         done = self.tick > self.ep_len
         sv = self.state_vector(self)
         self.traj_count += int(done)
 
-        return sv, reward, done, {'rewards': rew_info}
+        # return sv, reward, done, {'rewards': rew_info}
+        return sv, None, done, {'rewards': dict()}
 
     def resample_dynamics(self):
         """

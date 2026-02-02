@@ -16,6 +16,8 @@ class Mixer:
         self.model_params = model_params if model_params is not None else ModelParams()
         self.allocation_matrix_inv = None
 
+        self.out = Actuators()
+
         self.calculate_allocation()
 
     # --------------------------------------------------------------
@@ -104,7 +106,9 @@ class Mixer:
                     # throttle very small → simply scale down
                     motors = motors / mx
 
-        return Actuators(motors=motors)
+        self.out.motors = motors
+
+        return self.out
 
     # --------------------------------------------------------------
 

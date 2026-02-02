@@ -38,6 +38,7 @@ def _worker(  # noqa: C901
                 # done = terminated or truncated
                 done = np.array(terminated) | np.array(truncated)
                 # info["TimeLimit.truncated"] = truncated and not terminated
+                reset_info = None
                 if isinstance(info, list):
                     if any(done):
                         for i in range(len(info)):
@@ -109,6 +110,7 @@ class SubprocVecEnvCustom(VecEnv):
     """
 
     def __init__(self, env_fns: list[Callable[[], gym.Env]], start_method: Optional[str] = None, agents_per_env=1):
+        self.batch = 0
         self.waiting = False
         self.closed = False
         n_envs = len(env_fns)
@@ -158,6 +160,7 @@ class SubprocVecEnvCustom(VecEnv):
         # Seeds and options are only used once
         self._reset_seeds()
         self._reset_options()
+
         return _stack_obs(obs, self.observation_space)
 
     def close(self) -> None:

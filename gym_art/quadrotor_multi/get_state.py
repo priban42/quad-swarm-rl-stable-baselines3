@@ -4,7 +4,7 @@ import numpy as np
 # NOTE: the state_* methods are static because otherwise getattr memorizes self
 
 
-def state_aw_awdot_xy_vxy_a_adot(self):
+def state_aw_awdot_dist_distdot_a_adot(self):
     if self.use_numba:
         pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(
             self.dynamics.pos,
@@ -24,13 +24,15 @@ def state_aw_awdot_xy_vxy_a_adot(self):
             dt=self.dt
         )
     rel_pos = self.goal[:2] - pos[:2]
+    rel_dist = np.linalg.norm(rel_pos)
+    dot_rel_dist = (np.linalg.norm(rel_pos + vel[:2]*self.dt) - rel_dist)/self.dt
     angle_world = self.pre_controller.angle
     rel_pos_norm = rel_pos/np.linalg.norm(rel_pos)
-    goal_angle_world = np.arctan2(rel_pos_norm[1], rel_pos_norm[0])
-    rel_angle = angle_world-goal_angle_world
+    target_angle_world = np.arctan2(rel_pos_norm[1], rel_pos_norm[0])
+    rel_angle = target_angle_world - angle_world
     rel_angle = (rel_angle + np.pi)%(2*np.pi) - np.pi
     ang_vel = self.pre_controller.angular_velocity
-    return np.concatenate([[angle_world, ang_vel], rel_pos, vel[:2], [rel_angle, -np.sign(ang_vel*rel_angle)*ang_vel]])
+    return np.array([angle_world, ang_vel, rel_dist, dot_rel_dist, rel_angle, -np.sign(ang_vel*rel_angle)*abs(ang_vel)])
 
 def state_xyz_vxyz_R_omega(self):
     if self.use_numba:

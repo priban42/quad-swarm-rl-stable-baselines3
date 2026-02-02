@@ -35,7 +35,7 @@ class SB3QuadrotorEnv(gym.Env):
         num_agents=1,
         episode_duration=30.0,
         # obs_repr="xyz_vxyz_R_omega",
-        obs_repr="aw_awdot_xy_vxy_a_adot",
+        obs_repr="aw_awdot_dist_distdot_a_adot",
         neighbor_visible_num=-1,
         neighbor_obs_type="pos",
         collision_hitbox_radius=2.0,
@@ -57,6 +57,7 @@ class SB3QuadrotorEnv(gym.Env):
         device="cpu",
         checkpoint_path=None,
         quads_render=False,
+        curriculum_param=None,
         **kwargs
     ):
         self.seed = seed
@@ -67,7 +68,7 @@ class SB3QuadrotorEnv(gym.Env):
             use_replay_buffer, quads_mode, use_downwash, use_numba, render_mode,quads_render,
             anneal_collision_steps,
             quads_collision_reward, quads_collision_smooth_max_penalty, quads_obst_collision_reward,
-            visualize_v_value, device, checkpoint_path
+            visualize_v_value, device, checkpoint_path, curriculum_param
         )
 
         self.device = device
@@ -79,7 +80,7 @@ class SB3QuadrotorEnv(gym.Env):
                   use_obstacles, obst_density, obst_size,
                   use_replay_buffer, quads_mode, use_downwash, use_numba, render_mode,quads_render,
                   anneal_collision_steps, quads_collision_reward, quads_collision_smooth_max_penalty,
-                  quads_obst_collision_reward, visualize_v_value, device, checkpoint_path):
+                  quads_obst_collision_reward, visualize_v_value, device, checkpoint_path, curriculum_param):
 
         # from gym_art.quadrotor_multi.quadrotor_multi_controller import QuadrotorEnvMulti
         from gym_art.quadrotor_multi.quadrotor_multi_rewards import QuadrotorEnvMulti
@@ -91,7 +92,7 @@ class SB3QuadrotorEnv(gym.Env):
         raw_control = True
         raw_control_zero_middle = True
         sense_noise = "default"
-        room_dims = [10, 10, 3]
+        room_dims = [15, 15, 3]
         obst_spawn_area = [(-4, 4), (-4, 4), (0, 3)]
         # quads_view_mode = ["global"]
         quads_view_mode = ["topdown"]
@@ -138,6 +139,7 @@ class SB3QuadrotorEnv(gym.Env):
             use_numba=use_numba,
             quads_mode=quads_mode,
             render_mode=render_mode,
+            curriculum_param=curriculum_param
         )
 
         # --- 2. Optional wrappers (same as before) ---
@@ -164,8 +166,7 @@ class SB3QuadrotorEnv(gym.Env):
         else:
             annealing = None
 
-        env = QuadsRewardShapingWrapper(env, reward_shaping_scheme=reward_shaping, annealing=annealing,
-                                        with_pbt=False)
+        # env = QuadsRewardShapingWrapper(env, reward_shaping_scheme=reward_shaping, annealing=annealing, with_pbt=False)
 
         # reward_shaping = copy.deepcopy(DEFAULT_QUAD_REWARD_SHAPING)
         # reward_shaping["quad_rewards"].update({

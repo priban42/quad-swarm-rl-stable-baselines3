@@ -31,6 +31,7 @@ class AttitudeController:
         self.pid_z = PIDController()
 
         self.initialize_pids()
+        self.out = AttitudeRate()
 
     # -------------------------------------------------------------------
 
@@ -73,13 +74,12 @@ class AttitudeController:
             (R_error[0, 1] - R_error[1, 0]) / 2.0
         ])
 
-        out = AttitudeRate()
-        out.rate_x = self.pid_x.update(R_error_vec[0], dt)
-        out.rate_y = self.pid_y.update(R_error_vec[1], dt)
-        out.rate_z = self.pid_z.update(R_error_vec[2], dt)
-        out.throttle = reference.throttle
+        self.out.rate_x = self.pid_x.update(R_error_vec[0], dt)
+        self.out.rate_y = self.pid_y.update(R_error_vec[1], dt)
+        self.out.rate_z = self.pid_z.update(R_error_vec[2], dt)
+        self.out.throttle = reference.throttle
 
-        return out
+        return self.out
 
     # -------------------------------------------------------------------
     #   Control signal from Tilt + Heading Rate reference

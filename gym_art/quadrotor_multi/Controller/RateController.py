@@ -29,6 +29,7 @@ class RateController:
         self.pid_z = PIDController()
 
         self.initialize_pids()
+        self.out = ControlGroup()
 
     # ----------------------------------------------------------------------
 
@@ -80,10 +81,9 @@ class RateController:
 
         ang_error = ang_ref - state.omega
 
-        out = ControlGroup()
-        out.roll     = self.pid_x.update(ang_error[0], dt)*800
-        out.pitch    = self.pid_y.update(ang_error[1], dt)*800
-        out.yaw      = self.pid_z.update(ang_error[2], dt)*800
-        out.throttle = reference.throttle
+        self.out.roll     = self.pid_x.update(ang_error[0], dt)*800
+        self.out.pitch    = self.pid_y.update(ang_error[1], dt)*800
+        self.out.yaw      = self.pid_z.update(ang_error[2], dt)*800
+        self.out.throttle = reference.throttle
 
-        return out
+        return self.out
