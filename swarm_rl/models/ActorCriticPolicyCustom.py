@@ -55,13 +55,13 @@ class QuadrotorEnvConfig:
 
     quads_num_agents: int = 4
     # quads_obs_repr: str = 'xyz_vxyz_R_omega'
-    quads_obs_repr: str = 'aw_awdot_dist_distdot_a_adot'
+    quads_obs_repr: str = 'aw_awdot_dist_distdot_angle_angledot'
     quads_episode_duration: float = 15.0
     quads_encoder_type: str = 'corl'
 
     # Neighbor
     quads_neighbor_visible_num: int = -1
-    quads_neighbor_obs_type: str = 'pos'
+    quads_neighbor_obs_type: str = 'dist_angle'
     quads_neighbor_hidden_size: int = 256
     quads_neighbor_encoder_type: str = 'attention'
 

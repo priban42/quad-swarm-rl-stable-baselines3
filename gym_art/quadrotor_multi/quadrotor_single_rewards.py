@@ -316,11 +316,11 @@ class QuadrotorSingle:
             "R": [-np.ones(9), np.ones(9)],
             "Rz": [-np.ones(3), np.ones(3)],
             "omega": [-self.dynamics.omega_max * np.ones(3), self.dynamics.omega_max * np.ones(3)],
-            "a": [-np.pi*np.ones(1), np.pi*np.ones(1)],
+            "angle": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "aw": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "dist": [-self.dynamics.vxyz_max* np.ones(1)*(3**0.5), self.dynamics.vxyz_max* np.ones(1)*(3**0.5)],
             "distdot": [-self.dynamics.vxyz_max * np.ones(1), self.dynamics.vxyz_max * np.ones(1)],
-            "adot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
+            "angledot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
             "awdot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
             "t2w": [0. * np.ones(1), 5. * np.ones(1)],
             "t2t": [0. * np.ones(1), 1. * np.ones(1)],
@@ -360,6 +360,8 @@ class QuadrotorSingle:
             obs_comps = obs_comps + (['rxyz']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'npos' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['rxyz']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'dist_angle' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['dist'] + ['angle']) * self.num_use_neighbor_obs
 
         if self.use_obstacles:
             obs_comps = obs_comps + ["octmap"]
@@ -428,7 +430,7 @@ class QuadrotorSingle:
         self.traj_count += int(done)
 
         # return sv, reward, done, {'rewards': rew_info}
-        return sv, None, done, {'rewards': dict()}
+        return sv, None, done, {'rewards': dict(), 'goal_dist':np.linalg.norm(self.dynamics.pos - self.goal)}
 
     def resample_dynamics(self):
         """

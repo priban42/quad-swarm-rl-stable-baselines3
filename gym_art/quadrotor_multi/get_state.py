@@ -4,7 +4,7 @@ import numpy as np
 # NOTE: the state_* methods are static because otherwise getattr memorizes self
 
 
-def state_aw_awdot_dist_distdot_a_adot(self):
+def state_aw_awdot_dist_distdot_angle_angledot(self):
     if self.use_numba:
         pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(
             self.dynamics.pos,

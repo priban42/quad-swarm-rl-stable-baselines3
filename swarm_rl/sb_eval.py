@@ -1,77 +1,62 @@
 import gymnasium as gym
 import torch
-import cv2
 import numpy as np
+from numpy.ma.extras import average
 from stable_baselines3 import PPO
 from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv  # your env wrapper
+import matplotlib.pyplot as plt
 
-# ----------------------------
-# Configuration
-# ----------------------------
-# MODEL_PATH = "PPO/best_model/best_model.zip"  # path to your trained model
-# MODEL_PATH = "PPO_4_ang/best_model/best_model.zip"  # path to your trained model
-# MODEL_PATH = "PPO_4_ang/best_model/best_model.zip"  # path to your trained model
-MODEL_PATH = "PPO_4_ang/curriculum_checkpoint/0_049.zip"  # path to your trained model
-# MODEL_PATH = "PPO_4_controller/checkpoints/quad_swarm_5199168_steps.zip"  # path to your trained model
-NUM_EPISODES = 1
-MAX_FRAMES = 600  # maximum frames per episode
-episode_duration = 60.0
-VIDEO_PATH = "quad_test4_ang_dist2.mp4"
-FPS = 30
-
-# ----------------------------
-# Create environment
-# ----------------------------
-num_of_agents = 4
-# env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
-# env = SB3QuadrotorEnv(seed=3, quads_render=True, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="static_diff_goal")
-env = SB3QuadrotorEnv(seed=0, quads_render=True, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory")
-
-# ----------------------------
-# Load trained model
-# ----------------------------
-model = PPO.load(MODEL_PATH, env=env, device="cpu")
-
-# ----------------------------
-# Get frame size from first render
-# ----------------------------
-obs, info = env.reset()
-frame = env.render()
-frame_height, frame_width, _ = frame.shape
-
-# Initialize video writer
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-video_writer = cv2.VideoWriter(VIDEO_PATH, fourcc, FPS, (frame_width, frame_height))
-
-# ----------------------------
-# Run test episodes
-# ----------------------------
-for episode in range(NUM_EPISODES):
+def eval_model(model_path, num_of_agents, max_frames, num_episodes, episode_duration):
+    env = SB3QuadrotorEnv(seed=1, quads_render=False, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory")
+    model = PPO.load(model_path, env=env, device="cpu")
     obs, info = env.reset()
-    done = False
-    terminated = False
-    truncated = False
-    episode_reward = 0.0
-    frame_count = 0
 
-    while frame_count < MAX_FRAMES:
-        action, _states = model.predict(obs, deterministic=True)
-        obs, reward, terminated, truncated, info = env.step(action)
-        episode_reward += np.array(reward).sum()
-
-        # Render and save frame
-        frame = env.render()  # ensure we get an image array
-        if frame is not None:
-            video_writer.write(cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))  # convert RGB to BGR for OpenCV
+    episode_lengths = []
+    average_distances = []
+    for episode in range(num_episodes):
+        obs, info = env.reset()
+        done = False
+        terminated = False
+        truncated = False
+        episode_reward = 0.0
+        frame_count = 0
+        average_distance = 0
+        while frame_count < max_frames:
+            action, _states = model.predict(obs, deterministic=True)
+            obs, reward, terminated, truncated, info = env.step(action)
+            episode_reward += np.array(reward).sum()
+            average_distance += sum(d['goal_dist'] for d in info)/num_of_agents
             frame_count += 1
-        if any(terminated):
-            env.reset()
+            if any(terminated):
+                break
+        episode_lengths.append(frame_count)
+        average_distances.append(average_distance / frame_count)
+        env.reset()
+        print(f"Episode {episode + 1}: Reward = {episode_reward}, Frames = {frame_count}")
+    env.close()
+    return episode_lengths, average_distances
 
-    print(f"Episode {episode + 1}: Reward = {episode_reward}, Frames = {frame_count}")
+if __name__ == "__main__":
+    MODEL_PATH = "PPO_4_ang/curriculum_checkpoint/0_049.zip"  # path to your trained model
+    NUM_EPISODES = 10
+    MAX_FRAMES = 3000  # maximum frames per episode
+    episode_duration = 60.0 # s
+    num_of_agents = 4
+    episode_lengths_curr, average_distances_curr = eval_model("PPO_4_ang/curriculum_checkpoint/0_049.zip", num_of_agents, MAX_FRAMES, NUM_EPISODES, episode_duration)
+    episode_lengths, average_distances = eval_model("PPO_4_ang/best_model/best_model.zip", num_of_agents, MAX_FRAMES, NUM_EPISODES, episode_duration)
+    labels = ["curriculum", "no curriculum"]
 
-# ----------------------------
-# Release resources
-# ----------------------------
-video_writer.release()
-env.close()
-print(f"Video saved to {VIDEO_PATH}")
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    ax[0].plot(episode_lengths_curr, label=labels[0])
+    ax[1].plot(average_distances_curr, label=labels[0])
+    ax[0].plot(episode_lengths, label=labels[1])
+    ax[1].plot(average_distances, label=labels[1])
+    ax[0].legend()
+    ax[1].legend()
+    ax[0].set_xlabel('episode')
+    ax[0].set_ylabel('episode length')
+    ax[1].set_xlabel('episode')
+    ax[1].set_ylabel('average distance from goal')
+    plt.tight_layout();
+    plt.show()
+    pass

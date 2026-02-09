@@ -10,6 +10,7 @@ from gym_art.quadrotor_multi.scenarios.dynamic_diff_goal import Scenario_dynamic
 from gym_art.quadrotor_multi.scenarios.dynamic_formations import Scenario_dynamic_formations
 from gym_art.quadrotor_multi.scenarios.dynamic_same_goal import Scenario_dynamic_same_goal
 from gym_art.quadrotor_multi.scenarios.dynamic_same_goal_trajectory import Scenario_dynamic_same_goal_trajectory
+from gym_art.quadrotor_multi.scenarios.dynamic_repulsive import Scenario_dynamic_repulsive
 from gym_art.quadrotor_multi.scenarios.ep_lissajous3D import Scenario_ep_lissajous3D
 from gym_art.quadrotor_multi.scenarios.ep_rand_bezier import Scenario_ep_rand_bezier
 from gym_art.quadrotor_multi.scenarios.run_away import Scenario_run_away

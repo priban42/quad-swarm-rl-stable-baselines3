@@ -29,7 +29,7 @@ OBST_COLOR_4 = (0., 0.5, 0., 1.)
 
 QUADS_OBS_REPR = {
     'xyz_vxyz_R_omega': 18,
-    'aw_awdot_dist_distdot_a_adot': 6,
+    'aw_awdot_dist_distdot_angle_angledot': 6,
     'xyz_vxyz_R_omega_floor': 19,
     'xyz_vxyz_R_omega_wall': 24,
 }
@@ -43,6 +43,9 @@ QUADS_NEIGHBOR_OBS_TYPE = {
     'rng3':3,
     'pos':3,
     'npos':3,
+    'dist':1,
+    'angle':1,
+    'dist_angle':2
 }
 
 QUADS_OBSTACLE_OBS_TYPE = {

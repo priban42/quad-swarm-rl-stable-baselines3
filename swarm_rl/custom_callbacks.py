@@ -453,8 +453,8 @@ class CurriculumCallback(EvalCallback):
                 change = True
         if change:
             self.sucess_rate = np.sum(self.past_successes)/self.window_size
-            if self.sucess_rate > 10.5:
-                self.shared_param.value = 0.90*self.shared_param.value
+            if self.sucess_rate > 0.95:
+                self.shared_param.value = 0.95*self.shared_param.value
                 print(f"capture radius reduced to:{self.shared_param.value}")
                 self.past_successes = np.zeros(self.window_size)
                 model_path = self.save_path + f"/curriculum_checkpoint/{self.shared_param.value:0.3f}".replace(".", "_") + ".zip"

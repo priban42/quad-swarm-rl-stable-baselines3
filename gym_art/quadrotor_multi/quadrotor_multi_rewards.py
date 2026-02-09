@@ -279,11 +279,26 @@ class QuadrotorEnvMulti(gym.Env):
 
     def get_rel_pos_vel_item(self, env_id, indices=None):
         i = env_id
-
         if indices is None:
             # if not specified explicitly, consider all neighbors
             indices = [j for j in range(self.num_agents) if j != i]
         ret = np.zeros((len(indices), 0))
+        if "dist" in self.envs[i].neighbor_obs_type:
+            cur_pos = self.pos[i]
+            pos_neighbor = np.stack([self.pos[j] for j in indices])
+            pos_rel = pos_neighbor - cur_pos
+            dist_rel = np.linalg.norm(pos_rel, axis=1)
+            ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
+        if "angle" in self.envs[i].neighbor_obs_type:
+            cur_pos = self.pos[i]
+            pos_neighbor = np.stack([self.pos[j] for j in indices])
+            pos_rel = pos_neighbor - cur_pos
+            angle_world = self.envs[i].pre_controller.angle
+            rel_pos_norm = pos_rel / np.linalg.norm(pos_rel, axis=1)[:, np.newaxis]
+            target_angle_world = np.arctan2(rel_pos_norm[:, 1], rel_pos_norm[:, 0])
+            rel_angle = target_angle_world - angle_world
+            rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
+            ret = np.concatenate((ret, rel_angle[:, np.newaxis]), axis=1)
         if "npos" in self.envs[i].neighbor_obs_type:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
@@ -638,10 +653,14 @@ class QuadrotorEnvMulti(gym.Env):
             else:
                 rew_proximity = np.zeros(self.num_agents)
 
-            wq = 0.1
-            wd = 0.002  # 0.002
+            # wq = 0.1
+            wq = 0
+            # wd = 0.002
+            wd = 0
             w_captor = 100
             w_helper = 10
+            w_helper = 100
+            existence = -0.1
             rew_formation_score = -wq*np.ones(self.num_agents)*calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
             rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :2], axis=1)
             rew_proximity_custom = -wd*rel_distances
@@ -651,6 +670,7 @@ class QuadrotorEnvMulti(gym.Env):
                 capture_radius = 0.2  # m
             rew_captor = np.zeros(self.num_agents)
             rew_helper = np.zeros(self.num_agents)
+            rew_existence = existence*np.ones(self.num_agents)
             if np.any(capture_radius > rel_distances):
                 rew_captor += w_captor*(capture_radius > rel_distances)
                 rew_helper += w_helper*(capture_radius < rel_distances)
@@ -684,6 +704,7 @@ class QuadrotorEnvMulti(gym.Env):
                 rewards[i] += rew_proximity_custom[i]
                 rewards[i] += rew_captor[i]
                 rewards[i] += rew_helper[i]
+                rewards[i] += rew_existence[i]
 
                 # infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
                 # infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]

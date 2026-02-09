@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument("--total_timesteps", type=int, default=150_000_000)
     # parser.add_argument("--total_timesteps", type=int, default=300_000)
     parser.add_argument("--learning_rate", type=float, default=1e-4)
-    parser.add_argument("--logdir", type=str, default="./PPO_4_ang")
+    parser.add_argument("--logdir", type=str, default="./PPO_4_repulsive")
     parser.add_argument("--checkpoint_freq", type=int, default=100_000)
     parser.add_argument("--algo", type=str, default="ppo", choices=["ppo", "a2c", "sac"])
     parser.add_argument("--eval_freq", type=int, default=100_000)
@@ -76,12 +76,13 @@ def main():
     num_of_agents = cfg.quads_num_agents
 
     manager = mp.Manager()
-    # shared_curriculum_param = manager.Value('d', 3.0)
-    shared_curriculum_param = manager.Value('d', 0.2)
+    shared_curriculum_param = manager.Value('d', 3.0)
+    # shared_curriculum_param = manager.Value('d', 0.2)
 
     def make_env_fn(rank, seed=0):
         def _init():
-            env = SB3QuadrotorEnv(num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory", curriculum_param=shared_curriculum_param)
+            # env = SB3QuadrotorEnv(num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory", curriculum_param=shared_curriculum_param)
+            env = SB3QuadrotorEnv(num_agents=num_of_agents, quads_mode="dynamic_repulsive", curriculum_param=shared_curriculum_param)
             return env
         return _init
 
