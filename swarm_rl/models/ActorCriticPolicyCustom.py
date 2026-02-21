@@ -31,102 +31,103 @@ from sample_factory.model.action_parameterization import (
 from sample_factory.algo.utils.action_distributions import is_continuous_action_space, sample_actions_log_probs
 from sample_factory.utils.normalize import ObservationNormalizer
 
-@dataclass
-class QuadrotorEnvConfig:
-    # Quadrotor features
-
-    dim_mode = "2D_horizontal"
-
-    learning_rate = 0.0001
-    normalize_input = False
-
-    decoder_mlp_layers=[]
-    adaptive_stddev = False
-    initial_stddev = 1.0
-    continuous_tanh_scale = 1.0
-
-    policy_init_gain = 1.0
-    nonlinearity = 'tanh'
-    encoder_type = 'mlp'
-    encoder_subtype = 'mlp_quads'
-    rnn_size = 256
-    encoder_extra_fc_layers = 0
-    env_frameskip = 1
-
-    quads_num_agents: int = 4
-    # quads_obs_repr: str = 'xyz_vxyz_R_omega'
-    quads_obs_repr: str = 'aw_awdot_dist_distdot_angle_angledot'
-    quads_obs_repr: str = 'cdist_cdistdot_dist_distdot_angle_angledot'
-    quads_episode_duration: float = 15.0
-    quads_encoder_type: str = 'corl'
-
-    # Neighbor
-    quads_neighbor_visible_num: int = -1
-    quads_neighbor_obs_type: str = 'dist_angle'
-    quads_neighbor_hidden_size: int = 256
-    quads_neighbor_encoder_type: str = 'attention'
-
-    # Neighbor Collision Reward
-    quads_collision_reward: float = 0.0
-    quads_collision_hitbox_radius: float = 2.0
-    quads_collision_falloff_radius: float = 4.0
-    quads_collision_smooth_max_penalty: float = 10.0
-
-    # Obstacle
-    quads_use_obstacles: bool = False
-    quads_obstacle_obs_type: str = 'none'
-    quads_obst_density: float = 0.2
-    quads_obst_size: float = 1.0
-    quads_obst_spawn_area: List[float] = field(default_factory=lambda: [6.0, 6.0])
-    quads_domain_random: bool = False
-    quads_obst_density_random: bool = False
-    quads_obst_density_min: float = 0.05
-    quads_obst_density_max: float = 0.2
-    quads_obst_size_random: bool = False
-    quads_obst_size_min: float = 0.3
-    quads_obst_size_max: float = 0.6
-
-    # Obstacle Encoder
-    quads_obst_hidden_size: int = 256
-    quads_obst_encoder_type: str = 'mlp'
-
-    # Obstacle Collision Reward
-    quads_obst_collision_reward: float = 0.0
-
-    # Aerodynamics
-    quads_use_downwash: bool = False
-
-    # Numba Speed Up
-    quads_use_numba: bool = True
-
-    # Scenarios
-    quads_mode: str = 'mix'
-
-    # Room
-    quads_room_dims: List[float] = field(default_factory=lambda: [10.0, 10.0, 10.0])
-
-    # Replay Buffer
-    replay_buffer_sample_prob: float = 0.75
-
-    # Annealing
-    anneal_collision_steps: float = 300000000
-
-    # Rendering
-    quads_view_mode: List[str] = field(default_factory=lambda: ['topdown', 'chase', 'global'])
-    quads_render: bool = False
-    visualize_v_value: bool = False
-
-    # Sim2Real
-    quads_sim2real: bool = False
+# @dataclass
+# class QuadrotorEnvConfig:
+#     # Quadrotor features
+#
+#     dim_mode = "2D_horizontal"
+#
+#     learning_rate = 0.0001
+#     normalize_input = False
+#
+#     decoder_mlp_layers=[]
+#     adaptive_stddev = False
+#     initial_stddev = 1.0
+#     continuous_tanh_scale = 1.0
+#
+#     policy_init_gain = 1.0
+#     nonlinearity = 'tanh'
+#     encoder_type = 'mlp'
+#     encoder_subtype = 'mlp_quads'
+#     rnn_size = 256
+#     encoder_extra_fc_layers = 0
+#     env_frameskip = 1
+#
+#     quads_num_agents: int = 4
+#     # quads_obs_repr: str = 'xyz_vxyz_R_omega'
+#     quads_obs_repr: str = 'aw_awdot_dist_distdot_angle_angledot'
+#     quads_obs_repr: str = 'cdist_cdistdot_dist_distdot_angle_angledot'
+#     quads_episode_duration: float = 15.0
+#     quads_encoder_type: str = 'corl'
+#
+#     # Neighbor
+#     quads_neighbor_visible_num: int = -1
+#     quads_neighbor_obs_type: str = 'dist_angle'
+#     quads_neighbor_hidden_size: int = 256
+#     quads_neighbor_encoder_type: str = 'attention'
+#
+#     # Neighbor Collision Reward
+#     quads_collision_reward: float = 0.0
+#     quads_collision_hitbox_radius: float = 2.0
+#     quads_collision_falloff_radius: float = 4.0
+#     quads_collision_smooth_max_penalty: float = 10.0
+#
+#     # Obstacle
+#     quads_use_obstacles: bool = False
+#     quads_obstacle_obs_type: str = 'none'
+#     quads_obst_density: float = 0.2
+#     quads_obst_size: float = 1.0
+#     quads_obst_spawn_area: List[float] = field(default_factory=lambda: [6.0, 6.0])
+#     quads_domain_random: bool = False
+#     quads_obst_density_random: bool = False
+#     quads_obst_density_min: float = 0.05
+#     quads_obst_density_max: float = 0.2
+#     quads_obst_size_random: bool = False
+#     quads_obst_size_min: float = 0.3
+#     quads_obst_size_max: float = 0.6
+#
+#     # Obstacle Encoder
+#     quads_obst_hidden_size: int = 256
+#     quads_obst_encoder_type: str = 'mlp'
+#
+#     # Obstacle Collision Reward
+#     quads_obst_collision_reward: float = 0.0
+#
+#     # Aerodynamics
+#     quads_use_downwash: bool = False
+#
+#     # Numba Speed Up
+#     quads_use_numba: bool = True
+#
+#     # Scenarios
+#     quads_mode: str = 'mix'
+#
+#     # Room
+#     quads_room_dims: List[float] = field(default_factory=lambda: [10.0, 10.0, 10.0])
+#
+#     # Replay Buffer
+#     replay_buffer_sample_prob: float = 0.75
+#
+#     # Annealing
+#     anneal_collision_steps: float = 300000000
+#
+#     # Rendering
+#     quads_view_mode: List[str] = field(default_factory=lambda: ['topdown', 'chase', 'global'])
+#     quads_render: bool = False
+#     visualize_v_value: bool = False
+#
+#     # Sim2Real
+#     quads_sim2real: bool = False
 
 class ActorCriticPolicyCustomSharedWeights(ActorCriticPolicy):
     """
     Custom Actor-Critic policy for SB3 PPO using the QuadMultiEncoder + SampleFactory core/decoder.
     """
 
-    def __init__(self, observation_space, action_space, lr_schedule, **kwargs):
+    def __init__(self, observation_space, action_space, lr_schedule, cfg=None, **kwargs):
         super().__init__(observation_space, action_space, lr_schedule, net_arch=[], **kwargs)
-        self.cfg = QuadrotorEnvConfig()
+        # self.cfg = QuadrotorEnvConfig()
+        self.cfg = cfg
         # --- Custom modules ---
         self.encoder = QuadMultiEncoder(self.cfg, observation_space)
         encoder_output_size = self.encoder.get_out_size()
@@ -260,9 +261,10 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
     Custom Actor-Critic policy for SB3 PPO using the QuadMultiEncoder + SampleFactory core/decoder.
     """
 
-    def __init__(self, observation_space, action_space, lr_schedule, **kwargs):
+    def __init__(self, observation_space, action_space, lr_schedule, cfg=None, **kwargs):
         super().__init__(observation_space, action_space, lr_schedule, net_arch=[], **kwargs)
-        self.cfg = QuadrotorEnvConfig()
+        # self.cfg = QuadrotorEnvConfig()
+        self.cfg = cfg
         # --- Custom modules ---
         self.actor_encoder = QuadMultiEncoder(self.cfg, observation_space)
         self.actor_core = ModelCoreIdentity(self.cfg, self.actor_encoder.get_out_size())

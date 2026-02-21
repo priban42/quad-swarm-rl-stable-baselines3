@@ -127,20 +127,20 @@ class QuadMultiHeadAttentionEncoder(Encoder):
         super().__init__(cfg)
 
         # Internal params
-        if cfg.quads_obs_repr in QUADS_OBS_REPR:
-            self.self_obs_dim = QUADS_OBS_REPR[cfg.quads_obs_repr]
+        if cfg.obs_repr in QUADS_OBS_REPR:
+            self.self_obs_dim = QUADS_OBS_REPR[cfg.obs_repr]
         else:
-            raise NotImplementedError(f'Layer {cfg.quads_obs_repr} not supported!')
+            raise NotImplementedError(f'Layer {cfg.obs_repr} not supported!')
 
-        self.neighbor_hidden_size = cfg.quads_neighbor_hidden_size
-        self.use_obstacles = cfg.quads_use_obstacles
+        self.neighbor_hidden_size = cfg.neighbor_hidden_size
+        self.use_obstacles = cfg.use_obstacles
 
-        if cfg.quads_neighbor_visible_num == -1:
-            self.num_use_neighbor_obs = cfg.quads_num_agents - 1
+        if cfg.neighbor_visible_num == -1:
+            self.num_use_neighbor_obs = cfg.num_agents - 1
         else:
-            self.num_use_neighbor_obs = cfg.quads_neighbor_visible_num
+            self.num_use_neighbor_obs = cfg.neighbor_visible_num
 
-        self.neighbor_obs_dim = QUADS_NEIGHBOR_OBS_TYPE[cfg.quads_neighbor_obs_type]
+        self.neighbor_obs_dim = QUADS_NEIGHBOR_OBS_TYPE[cfg.neighbor_obs_type]
 
         self.all_neighbor_obs_dim = self.neighbor_obs_dim * self.num_use_neighbor_obs
 
@@ -158,7 +158,7 @@ class QuadMultiHeadAttentionEncoder(Encoder):
             fc_layer(fc_encoder_layer, fc_encoder_layer),
             nonlinearity(cfg)
         )
-        self.obstacle_obs_dim = QUADS_OBSTACLE_OBS_TYPE[cfg.quads_obstacle_obs_type]
+        self.obstacle_obs_dim = QUADS_OBSTACLE_OBS_TYPE[cfg.obstacle_obs_type]
         self.obstacle_embed_layer = nn.Sequential(
             fc_layer(self.obstacle_obs_dim, fc_encoder_layer),
             nonlinearity(cfg),
@@ -205,20 +205,20 @@ class QuadSingleHeadAttentionEncoder_Sim2Real(QuadMultiHeadAttentionEncoder):
         super().__init__(cfg, obs_space)
 
         # Internal params
-        if cfg.quads_obs_repr in QUADS_OBS_REPR:
-            self.self_obs_dim = QUADS_OBS_REPR[cfg.quads_obs_repr]
+        if cfg.obs_repr in QUADS_OBS_REPR:
+            self.self_obs_dim = QUADS_OBS_REPR[cfg.obs_repr]
         else:
-            raise NotImplementedError(f'Layer {cfg.quads_obs_repr} not supported!')
+            raise NotImplementedError(f'Layer {cfg.obs_repr} not supported!')
 
-        self.neighbor_hidden_size = cfg.quads_neighbor_hidden_size
-        self.use_obstacles = cfg.quads_use_obstacles
+        self.neighbor_hidden_size = cfg.neighbor_hidden_size
+        self.use_obstacles = cfg.use_obstacles
 
-        if cfg.quads_neighbor_visible_num == -1:
-            self.num_use_neighbor_obs = cfg.quads_num_agents - 1
+        if cfg.neighbor_visible_num == -1:
+            self.num_use_neighbor_obs = cfg.num_agents - 1
         else:
-            self.num_use_neighbor_obs = cfg.quads_neighbor_visible_num
+            self.num_use_neighbor_obs = cfg.neighbor_visible_num
 
-        self.neighbor_obs_dim = QUADS_NEIGHBOR_OBS_TYPE[cfg.quads_neighbor_obs_type]
+        self.neighbor_obs_dim = QUADS_NEIGHBOR_OBS_TYPE[cfg.neighbor_obs_type]
 
         self.all_neighbor_obs_dim = self.neighbor_obs_dim * self.num_use_neighbor_obs
 
@@ -232,7 +232,7 @@ class QuadSingleHeadAttentionEncoder_Sim2Real(QuadMultiHeadAttentionEncoder):
             fc_layer(self.all_neighbor_obs_dim, fc_encoder_layer),
             nonlinearity(cfg),
         )
-        self.obstacle_obs_dim = QUADS_OBSTACLE_OBS_TYPE[cfg.quads_obstacle_obs_type]
+        self.obstacle_obs_dim = QUADS_OBSTACLE_OBS_TYPE[cfg.obstacle_obs_type]
         self.obstacle_embed_layer = nn.Sequential(
             fc_layer(self.obstacle_obs_dim, fc_encoder_layer),
             nonlinearity(cfg),
@@ -252,20 +252,20 @@ class QuadMultiEncoder(Encoder):
     def __init__(self, cfg, obs_space):
         super().__init__(cfg)
 
-        self.self_obs_dim = QUADS_OBS_REPR[cfg.quads_obs_repr]
-        self.use_obstacles = cfg.quads_use_obstacles
+        self.self_obs_dim = QUADS_OBS_REPR[cfg.obs_repr]
+        self.use_obstacles = cfg.use_obstacles
 
         # Neighbor
-        neighbor_hidden_size = cfg.quads_neighbor_hidden_size
-        neighbor_obs_dim = QUADS_NEIGHBOR_OBS_TYPE[cfg.quads_neighbor_obs_type]
+        neighbor_hidden_size = cfg.neighbor_hidden_size
+        neighbor_obs_dim = QUADS_NEIGHBOR_OBS_TYPE[cfg.neighbor_obs_type]
 
-        if cfg.quads_neighbor_obs_type == 'none':
+        if cfg.neighbor_obs_type == 'none':
             num_use_neighbor_obs = 0
         else:
-            if cfg.quads_neighbor_visible_num == -1:
-                num_use_neighbor_obs = cfg.quads_num_agents - 1
+            if cfg.neighbor_visible_num == -1:
+                num_use_neighbor_obs = cfg.num_agents - 1
             else:
-                num_use_neighbor_obs = cfg.quads_neighbor_visible_num
+                num_use_neighbor_obs = cfg.neighbor_visible_num
 
         self.all_neighbor_obs_size = neighbor_obs_dim * num_use_neighbor_obs
 
@@ -274,7 +274,7 @@ class QuadMultiEncoder(Encoder):
         self.neighbor_encoder = None
 
         if num_use_neighbor_obs > 0:
-            neighbor_encoder_type = cfg.quads_neighbor_encoder_type
+            neighbor_encoder_type = cfg.neighbor_encoder_type
             if neighbor_encoder_type == 'mean_embed':
                 self.neighbor_encoder = QuadNeighborhoodEncoderDeepsets(
                     cfg=cfg, neighbor_obs_dim=neighbor_obs_dim, neighbor_hidden_size=neighbor_hidden_size,
@@ -309,8 +309,8 @@ class QuadMultiEncoder(Encoder):
         # Encode Obstacle Obs
         obstacle_encoder_out_size = 0
         if self.use_obstacles:
-            obstacle_obs_dim = QUADS_OBSTACLE_OBS_TYPE[cfg.quads_obstacle_obs_type]
-            obstacle_hidden_size = cfg.quads_obst_hidden_size
+            obstacle_obs_dim = QUADS_OBSTACLE_OBS_TYPE[cfg.obstacle_obs_type]
+            obstacle_hidden_size = cfg.obst_hidden_size
             self.obstacle_encoder = nn.Sequential(
                 fc_layer(obstacle_obs_dim, obstacle_hidden_size),
                 nonlinearity(cfg),
@@ -354,8 +354,8 @@ class QuadMultiEncoder(Encoder):
 
 
 def make_quadmulti_encoder(cfg, obs_space) -> Encoder:
-    if cfg.quads_encoder_type == "attention":
-        if cfg.quads_sim2real:
+    if cfg.encoder_type == "attention":
+        if cfg.sim2real:
             model = QuadSingleHeadAttentionEncoder_Sim2Real(cfg, obs_space)
         else:
             model = QuadMultiHeadAttentionEncoder(cfg, obs_space)

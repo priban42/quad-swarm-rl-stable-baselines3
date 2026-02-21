@@ -4,15 +4,15 @@ import cv2
 import numpy as np
 from stable_baselines3 import PPO
 from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv
-
+from global_cfg import QuadrotorEnvConfig
 # ----------------------------
 # Configuration
 # ----------------------------
 # MODEL_PATH = "PPO/best_model/best_model.zip"
 # MODEL_PATH = "PPO_4_ang/best_model/best_model.zip"
-# MODEL_PATH = "PPO_4_repulsive/best_model/best_model.zip"
-# MODEL_PATH = "PPO_4_ang/curriculum_checkpoint/0_049.zip"
-MODEL_PATH = "PPO_4_repulsive/curriculum_checkpoint/0_498.zip"
+MODEL_PATH = "PPO_4_repulsive/best_model/best_model.zip"
+# MODEL_PATH = "PPO_4_ang/curriculum_checkpoint_dense/0_049.zip"
+# MODEL_PATH = "PPO_4_repulsive/curriculum_checkpoint_dense/0_498.zip"
 # MODEL_PATH = "PPO_4_controller/checkpoints/quad_swarm_5199168_steps.zip"
 NUM_EPISODES = 5
 MAX_FRAMES = 600  # maximum frames per episode
@@ -20,12 +20,18 @@ episode_duration = 60.0
 VIDEO_PATH = "test4_curr_repulsive_cdist.mp4"
 FPS = 30
 
-
-num_of_agents = 4
+cfg = QuadrotorEnvConfig()
+cfg.num_agents = 4
+cfg.seed = 0
+cfg.quads_render = True
+cfg.episode_duration = 60.0
+cfg.quads_mode = "dynamic_repulsive"
+# num_of_agents = 4
 # env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
 # env = SB3QuadrotorEnv(seed=3, quads_render=True, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="static_diff_goal")
 # env = SB3QuadrotorEnv(seed=0, quads_render=True, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="dynamic_same_goal_trajectory")
-env = SB3QuadrotorEnv(seed=0, quads_render=True, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="dynamic_repulsive")
+# env = SB3QuadrotorEnv(seed=0, quads_render=True, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="dynamic_repulsive")
+env = SB3QuadrotorEnv(cfg)
 
 # ----------------------------
 # Load trained model

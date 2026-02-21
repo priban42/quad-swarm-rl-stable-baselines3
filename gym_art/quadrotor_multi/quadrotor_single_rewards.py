@@ -109,14 +109,16 @@ def compute_reward_weighted(dynamics, goal, action, dt, time_remain, rew_coeff, 
 # size of the env and init state distribution are not the same ! It is done for the reason of having static (and
 # preferably short) episode length, since for some distance it would be impossible to reach the goal
 class QuadrotorSingle:
-    def __init__(self, dynamics_params="DefaultQuad", dynamics_change=None,
-                 dynamics_randomize_every=None, dyn_sampler_1=None, dyn_sampler_2=None,
-                 raw_control=True, raw_control_zero_middle=True, dim_mode='2D_horizontal',#'3D',
-                 tf_control=False, sim_freq=200.,
-                 sim_steps=2, obs_repr="xyz_vxyz_R_omega", ep_time=7, room_dims=(10.0, 10.0, 10.0),
-                 init_random_state=False, sense_noise=None, verbose=False, gravity=GRAV,
-                 t2w_std=0.005, t2t_std=0.0005, excite=False, dynamics_simplification=False, use_numba=False,
-                 neighbor_obs_type='none', num_agents=1, num_use_neighbor_obs=0, use_obstacles=False, rng=None):
+    def __init__(self, cfg, rng=None,
+                 # dynamics_params="DefaultQuad", dynamics_change=None,
+                 # dynamics_randomize_every=None, dyn_sampler_1=None, dyn_sampler_2=None,
+                 # raw_control=True, raw_control_zero_middle=True, dim_mode='2D_horizontal',#'3D',
+                 # tf_control=False, sim_freq=200.,
+                 # sim_steps=2, obs_repr="xyz_vxyz_R_omega", ep_time=7, room_dims=(10.0, 10.0, 10.0),
+                 # init_random_state=False, sense_noise=None, verbose=False, gravity=GRAV,
+                 # t2w_std=0.005, t2t_std=0.0005, excite=False, dynamics_simplification=False, use_numba=False,
+                 # neighbor_obs_type='none', num_agents=1, num_use_neighbor_obs=0, use_obstacles=False, rng=None
+                 ):
         np.seterr(under='ignore')
         """
         Args:
@@ -151,54 +153,54 @@ class QuadrotorSingle:
             excite: [bool] change the set point at the fixed frequency to perturb the quad
         """
         # Numba Speed Up
-        self.use_numba = use_numba
+        self.use_numba = cfg.use_numba
 
         # Room
-        self.room_length = room_dims[0]
-        self.room_width = room_dims[1]
-        self.room_height = room_dims[2]
+        self.room_length = cfg.room_dims[0]
+        self.room_width = cfg.room_dims[1]
+        self.room_height = cfg.room_dims[2]
         self.room_box = np.array([[-self.room_length / 2., -self.room_width / 2, 0.],
                                   [self.room_length / 2., self.room_width / 2., self.room_height]])
 
-        self.init_random_state = init_random_state
+        self.init_random_state = cfg.init_random_state
         self.rng = rng
         # Preset parameters
-        self.obs_repr = obs_repr
+        self.obs_repr = cfg.obs_repr
         self.rew_coeff = None
         # EPISODE PARAMS
-        self.ep_time = ep_time  # In seconds
-        self.sim_steps = sim_steps
-        self.dt = 1.0 / sim_freq
+        self.ep_time = cfg.episode_duration  # In seconds
+        self.sim_steps = cfg.sim_steps
+        self.dt = 1.0 / cfg.sim_freq
         self.ep_len = int(self.ep_time / (self.dt * self.sim_steps))
         self.tick = 0
-        self.control_freq = sim_freq / sim_steps
+        self.control_freq = cfg.sim_freq / cfg.sim_steps
         self.traj_count = 0
 
         # Self dynamics
-        self.dim_mode = dim_mode
-        self.raw_control_zero_middle = raw_control_zero_middle
-        self.tf_control = tf_control
-        self.dynamics_randomize_every = dynamics_randomize_every
-        self.verbose = verbose
-        self.raw_control = raw_control
-        self.gravity = gravity
-        self.update_sense_noise(sense_noise=sense_noise)
-        self.t2w_std = t2w_std
+        self.dim_mode = cfg.dim_mode
+        self.raw_control_zero_middle = cfg.raw_control_zero_middle
+        self.tf_control = cfg.tf_control
+        self.dynamics_randomize_every = cfg.dynamics_randomize_every
+        self.verbose = cfg.verbose
+        self.raw_control = cfg.raw_control
+        self.gravity = cfg.gravity
+        self.update_sense_noise(sense_noise=cfg.sense_noise)
+        self.t2w_std = cfg.t2w_std
         self.t2w_min = 1.5
         self.t2w_max = 10.0
 
-        self.t2t_std = t2t_std
+        self.t2t_std = cfg.t2t_std
         self.t2t_min = 0.005
         self.t2t_max = 1.0
-        self.excite = excite
-        self.dynamics_simplification = dynamics_simplification
+        self.excite = cfg.excite
+        self.dynamics_simplification = cfg.dynamics_simplification
         self.max_init_vel = 1.  # m/s
         self.max_init_omega = 2 * np.pi  # rad/s
 
         # DYNAMICS (and randomization)
         # Could be dynamics of a specific quad or a random dynamics (i.e. randomquad)
-        self.dyn_base_sampler = getattr(quad_rand, dynamics_params)()
-        self.dynamics_change = copy.deepcopy(dynamics_change)
+        self.dyn_base_sampler = getattr(quad_rand, cfg.dynamics_params)()
+        self.dynamics_change = copy.deepcopy(cfg.dynamics_change)
         self.dynamics_params = self.dyn_base_sampler.sample()
 
         #ODO: change the noise back
@@ -207,6 +209,9 @@ class QuadrotorSingle:
         # Now, updating if we are providing modifications
         if self.dynamics_change is not None:
             dict_update_existing(self.dynamics_params, self.dynamics_change)
+
+        dyn_sampler_1 = None
+        dyn_sampler_2 = None
 
         self.dyn_sampler_1 = dyn_sampler_1
         if dyn_sampler_1 is not None:
@@ -230,7 +235,7 @@ class QuadrotorSingle:
 
         # Self info
         self.state_vector = getattr(get_state, "state_" + self.obs_repr)
-        if use_obstacles:
+        if cfg.use_obstacles:
             self.box = 0.1
         else:
             self.box = 2.0
@@ -239,12 +244,16 @@ class QuadrotorSingle:
         self.spawn_point = None
 
         # Neighbor info
-        self.num_agents = num_agents
-        self.neighbor_obs_type = neighbor_obs_type
-        self.num_use_neighbor_obs = num_use_neighbor_obs
+        self.num_agents = cfg.num_agents
+        self.neighbor_obs_type = cfg.neighbor_obs_type
+
+        if cfg.neighbor_visible_num == -1:
+            self.num_use_neighbor_obs = self.num_agents - 1
+        else:
+            self.num_use_neighbor_obs = cfg.neighbor_visible_num
 
         # Obstacles info
-        self.use_obstacles = use_obstacles
+        self.use_obstacles = cfg.use_obstacles
 
         # Make observation space
         self.observation_space = self.make_observation_space()

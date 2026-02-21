@@ -37,12 +37,12 @@ def eval_model(model_path, num_of_agents, max_frames, num_episodes, episode_dura
     return episode_lengths, average_distances
 
 if __name__ == "__main__":
-    MODEL_PATH = "PPO_4_ang/curriculum_checkpoint/0_049.zip"  # path to your trained model
+    MODEL_PATH = "PPO_4_ang/curriculum_checkpoint_dense/0_049.zip"  # path to your trained model
     NUM_EPISODES = 10
     MAX_FRAMES = 3000  # maximum frames per episode
     episode_duration = 60.0 # s
     num_of_agents = 4
-    episode_lengths_curr, average_distances_curr = eval_model("PPO_4_ang/curriculum_checkpoint/0_049.zip", num_of_agents, MAX_FRAMES, NUM_EPISODES, episode_duration)
+    episode_lengths_curr, average_distances_curr = eval_model("PPO_4_ang/curriculum_checkpoint_dense/0_049.zip", num_of_agents, MAX_FRAMES, NUM_EPISODES, episode_duration)
     episode_lengths, average_distances = eval_model("PPO_4_ang/best_model/best_model.zip", num_of_agents, MAX_FRAMES, NUM_EPISODES, episode_duration)
     labels = ["curriculum", "no curriculum"]
 

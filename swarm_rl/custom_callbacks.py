@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 import gymnasium as gym
 import numpy as np
 
-from stable_baselines3.common.logger import Logger
+from stable_baselines3.common.logger import Logger, HParam
+from global_cfg import QuadrotorEnvConfig
 
 try:
     from tqdm import TqdmExperimentalWarning
@@ -425,9 +426,10 @@ class EvalCallback(EventCallback):
             self.callback.update_locals(locals_)
 
 class CurriculumCallback(EvalCallback):
-    def __init__(self, shared_param, save_path, *args, **kwargs):
+    def __init__(self, cfg:QuadrotorEnvConfig, save_path, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.shared_param = shared_param
+        self.cfg = cfg
+        self.shared_param = cfg.shared_curriculum_param
         self.save_path = save_path
         self.last_batch = -1
         self.window_size = 40
@@ -453,14 +455,40 @@ class CurriculumCallback(EvalCallback):
                 change = True
         if change:
             self.sucess_rate = np.sum(self.past_successes)/self.window_size
-            if self.sucess_rate > 0.95:
-                self.shared_param.value = 0.95*self.shared_param.value
+            if self.sucess_rate > self.cfg.capture_radius_sr:
+                self.shared_param.value = self.cfg.capture_radius_decay*self.shared_param.value
                 print(f"capture radius reduced to:{self.shared_param.value}")
                 self.past_successes = np.zeros(self.window_size)
                 model_path = self.save_path + f"/curriculum_checkpoint/{self.shared_param.value:0.3f}".replace(".", "_") + ".zip"
                 self.model.save(model_path)
                 print(f"Saving model checkpoint to {model_path}")
         return result
+
+
+class TensorboardHParamCallback(BaseCallback):
+    def __init__(self, hparams_dict, note=None):
+        super().__init__()
+        self.hparams_dict = hparams_dict
+        self.note = note
+
+    def _on_step(self) -> bool:
+        return True
+
+    def _on_training_start(self):
+        if self.note is not None:
+            self.logger.record(
+                "experiment/note",
+                self.note,
+                exclude=("stdout", "csv", "json")
+            )
+        self.logger.record(
+            "hparams",
+            HParam(self.hparams_dict, {"curriculum/capture_radius":0.0}),
+            # HParam({"bagr":"bagr"}, {"curriculum/capture_radius":0.0}),
+            exclude=("stdout", "log", "json", "csv"),
+        )
+        print("Hyperparameter logging callback called")
+        return True
 
 class StopTrainingOnRewardThreshold(BaseCallback):
     """

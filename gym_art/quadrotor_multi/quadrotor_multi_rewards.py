@@ -24,62 +24,70 @@ from sample_factory.utils.utils import experiment_dir
 import pickle
 
 
-
-
 class QuadrotorEnvMulti(gym.Env):
-    def __init__(self, num_agents, ep_time, rew_coeff, obs_repr,
+    def __init__(self,
                  cfg,
-                 # Neighbor
-                 neighbor_visible_num, neighbor_obs_type, collision_hitbox_radius, collision_falloff_radius,
-
-                 # Obstacle
-                 use_obstacles, obst_density, obst_size, obst_spawn_area,
-
-                 # Aerodynamics, Numba Speed Up, Scenarios, Room, Replay Buffer, Rendering
-                 use_downwash, use_numba, quads_mode, room_dims, use_replay_buffer, quads_view_mode,
-                 quads_render,
-
-                 # Quadrotor Specific (Do Not Change)
-                 dynamics_params, raw_control, raw_control_zero_middle,
-                 dynamics_randomize_every, dynamics_change, dyn_sampler_1,
-                 sense_noise, init_random_state,
-                 # Rendering
-                 render_mode='human', curriculum_param=None
+                 # num_agents, ep_time, rew_coeff, obs_repr,
+                 # cfg,
+                 # # Neighbor
+                 # neighbor_visible_num, neighbor_obs_type, collision_hitbox_radius, collision_falloff_radius,
+                 #
+                 # # Obstacle
+                 # use_obstacles, obst_density, obst_size, obst_spawn_area,
+                 #
+                 # # Aerodynamics, Numba Speed Up, Scenarios, Room, Replay Buffer, Rendering
+                 # use_downwash, use_numba, quads_mode, room_dims, use_replay_buffer, quads_view_mode,
+                 # quads_render,
+                 #
+                 # # Quadrotor Specific (Do Not Change)
+                 # dynamics_params, raw_control, raw_control_zero_middle,
+                 # dynamics_randomize_every, dynamics_change, dyn_sampler_1,
+                 # sense_noise, init_random_state,
+                 # # Rendering
+                 # render_mode='human', curriculum_param=None
                  ):
         super().__init__()
-        self.curriculum_param = curriculum_param
+        self.curriculum_param = cfg.shared_curriculum_param
         # Predefined Parameters
         self.cfg = cfg
         self.rng = np.random.default_rng(seed=self.cfg.seed)
         print(f"SEED:{self.cfg.seed}")
-        self.num_agents = num_agents
-        obs_self_size = QUADS_OBS_REPR[obs_repr]
-        if neighbor_visible_num == -1:
+        self.num_agents = cfg.num_agents
+        obs_self_size = QUADS_OBS_REPR[cfg.obs_repr]
+        if cfg.neighbor_visible_num == -1:
             self.num_use_neighbor_obs = self.num_agents - 1
         else:
-            self.num_use_neighbor_obs = neighbor_visible_num
+            self.num_use_neighbor_obs = cfg.neighbor_visible_num
 
         # Set to True means that sample_factory will treat it as a multi-agent vectorized environment even with
         # num_agents=1. More info, please look at sample-factory: envs/quadrotors/wrappers/reward_shaping.py
         self.is_multiagent = True
-        self.room_dims = room_dims
-        self.quads_view_mode = quads_view_mode
+        self.room_dims = cfg.room_dims
+        self.quads_view_mode = cfg.quads_view_mode
 
         # Generate All Quadrotors
+
+
+        dynamics_change = dict(
+            noise=dict(thrust_noise_ratio=cfg.thrust_noise_ratio),
+            damp=dict(vel=0, omega_quadratic=0)
+        )
+
         self.envs = []
         for i in range(self.num_agents):
             e = QuadrotorSingle(
+                cfg,
                 # Quad Parameters
-                dynamics_params=dynamics_params, dynamics_change=dynamics_change,
-                dynamics_randomize_every=dynamics_randomize_every, dyn_sampler_1=dyn_sampler_1,
-                raw_control=raw_control, raw_control_zero_middle=raw_control_zero_middle, sense_noise=sense_noise,
-                init_random_state=init_random_state, obs_repr=obs_repr, ep_time=ep_time, room_dims=room_dims,
-                use_numba=use_numba,
-                # Neighbor
-                num_agents=num_agents,
-                neighbor_obs_type=neighbor_obs_type, num_use_neighbor_obs=self.num_use_neighbor_obs,
-                # Obstacle
-                use_obstacles=use_obstacles,
+                # dynamics_params=dynamics_params, dynamics_change=dynamics_change,
+                # dynamics_randomize_every=dynamics_randomize_every, dyn_sampler_1=dyn_sampler_1,
+                # raw_control=raw_control, raw_control_zero_middle=raw_control_zero_middle, sense_noise=sense_noise,
+                # init_random_state=init_random_state, obs_repr=obs_repr, ep_time=ep_time, room_dims=room_dims,
+                # use_numba=use_numba,
+                # # Neighbor
+                # num_agents=num_agents,
+                # neighbor_obs_type=neighbor_obs_type, num_use_neighbor_obs=self.num_use_neighbor_obs,
+                # # Obstacle
+                # use_obstacles=use_obstacles,
                 rng=self.rng,
             )
             self.envs.append(e)
@@ -107,10 +115,10 @@ class QuadrotorEnvMulti(gym.Env):
         )
         rew_coeff_orig = copy.deepcopy(self.rew_coeff)
 
-        if rew_coeff is not None:
-            assert isinstance(rew_coeff, dict)
-            assert set(rew_coeff.keys()).issubset(set(self.rew_coeff.keys()))
-            self.rew_coeff.update(rew_coeff)
+        if self.rew_coeff is not None:
+            assert isinstance(self.rew_coeff, dict)
+            assert set(self.rew_coeff.keys()).issubset(set(self.rew_coeff.keys()))
+            self.rew_coeff.update(self.rew_coeff)
         for key in self.rew_coeff.keys():
             self.rew_coeff[key] = float(self.rew_coeff[key])
 
@@ -119,7 +127,7 @@ class QuadrotorEnvMulti(gym.Env):
         assert np.all([key in orig_keys for key in self.rew_coeff.keys()])
 
         # Neighbors
-        neighbor_obs_size = QUADS_NEIGHBOR_OBS_TYPE[neighbor_obs_type]
+        neighbor_obs_size = QUADS_NEIGHBOR_OBS_TYPE[cfg.neighbor_obs_type]
 
         self.clip_neighbor_space_length = self.num_use_neighbor_obs * neighbor_obs_size
         self.clip_neighbor_space_min_box = self.observation_space.low[
@@ -128,7 +136,7 @@ class QuadrotorEnvMulti(gym.Env):
                                            obs_self_size:obs_self_size + self.clip_neighbor_space_length]
 
         # Obstacles
-        self.use_obstacles = use_obstacles
+        self.use_obstacles = cfg.use_obstacles
         self.obstacles = None
         self.num_obstacles = 0
         if self.use_obstacles:
@@ -136,20 +144,20 @@ class QuadrotorEnvMulti(gym.Env):
             self.obst_quad_collisions_per_episode = 0
             self.obst_quad_collisions_after_settle = 0
             self.curr_quad_col = []
-            self.obst_density = obst_density
-            self.obst_spawn_area = obst_spawn_area
-            self.num_obstacles = int(obst_density * obst_spawn_area[0] * obst_spawn_area[1])
+            self.obst_density = cfg.obst_density
+            self.obst_spawn_area = cfg.obst_spawn_area
+            self.num_obstacles = int(cfg.obst_density * cfg.obst_spawn_area[0] * cfg.obst_spawn_area[1])
             self.obst_map = None
-            self.obst_size = obst_size
+            self.obst_size = cfg.obst_size
 
             # Log more info
             self.distance_to_goal_3_5 = 0
             self.distance_to_goal_5 = 0
 
         # Scenarios
-        self.quads_mode = quads_mode
-        self.scenario = create_scenario(quads_mode=quads_mode, envs=self.envs, num_agents=num_agents,
-                                        room_dims=room_dims, rng = self.rng)
+        self.quads_mode = cfg.quads_mode
+        self.scenario = create_scenario(quads_mode=cfg.quads_mode, envs=self.envs, num_agents=cfg.num_agents,
+                                        room_dims=cfg.room_dims, rng = self.rng)
 
         # Collisions
         # # Collisions: Neighbors
@@ -164,8 +172,8 @@ class QuadrotorEnvMulti(gym.Env):
         self.collisions_final_5s = 0
 
         # # # Dense reward info
-        self.collision_threshold = collision_hitbox_radius * self.quad_arm
-        self.collision_falloff_threshold = collision_falloff_radius * self.quad_arm
+        self.collision_threshold = cfg.collision_hitbox_radius * self.quad_arm
+        self.collision_falloff_threshold = cfg.collision_falloff_radius * self.quad_arm
 
         # # Collisions: Room
         self.collisions_room_per_episode = 0
@@ -178,7 +186,7 @@ class QuadrotorEnvMulti(gym.Env):
         self.prev_crashed_room = []
 
         # Replay
-        self.use_replay_buffer = use_replay_buffer
+        self.use_replay_buffer = cfg.use_replay_buffer
         # # only start using the buffer after the drones learn how to fly
         self.activate_replay_buffer = False
         # # since the same collisions happen during replay, we don't want to keep resaving the same event
@@ -188,20 +196,20 @@ class QuadrotorEnvMulti(gym.Env):
         self.crashes_last_episode = 0
 
         # Numba
-        self.use_numba = use_numba
+        self.use_numba = cfg.use_numba
 
         # Aerodynamics
-        self.use_downwash = use_downwash
+        self.use_downwash = cfg.use_downwash
 
         # Rendering
         # # set to true whenever we need to reset the OpenGL scene in render()
-        self.render_mode =render_mode
-        self.quads_render = quads_render
+        self.render_mode = cfg.render_mode
+        self.quads_render = cfg.quads_render
         self.scenes = []
         self.render_speed = 1.0
         self.quads_formation_size = 2.0
         self.reset_scene = False
-        if self.quads_render:
+        if cfg.quads_render:
             self.simulation_start_time = 0
             self.frames_since_last_render = self.render_skip_frames = 0
             self.render_every_nth_frame = 1
@@ -234,33 +242,10 @@ class QuadrotorEnvMulti(gym.Env):
     def all_dynamics(self):
         return tuple(e.dynamics for e in self.envs)
 
-    # def get_rel_pos_vel_item(self, env_id, indices=None):
-    #     i = env_id
-    #
-    #     if indices is None:
-    #         # if not specified explicitly, consider all neighbors
-    #         indices = [j for j in range(self.num_agents) if j != i]
-    #
-    #     cur_pos = self.pos[i]
-    #     cur_vel = self.vel[i]
-    #     pos_neighbor = np.stack([self.pos[j] for j in indices])
-    #     vel_neighbor = np.stack([self.vel[j] for j in indices])
-    #     pos_rel = pos_neighbor - cur_pos
-    #     vel_rel = vel_neighbor - cur_vel
-    #     # return pos_rel, vel_rel
-    #     return np.concatenate((pos_rel, vel_rel), axis=1)
     @staticmethod
     def rotation_matrix(axis, angle):
         """
         Create a 3x3 rotation matrix from an axis and an angle using Rodrigues' formula.
-
-        Parameters:
-        axis (array-like): A 3-element array representing the axis of rotation.
-        angle (float): Rotation angle in radians.
-
-
-        Returns:
-        numpy.ndarray: A 3x3 rotation matrix.
         """
         axis = np.asarray(axis, dtype=float)
         axis = axis / np.linalg.norm(axis)  # normalize axis
