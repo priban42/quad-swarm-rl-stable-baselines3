@@ -7,7 +7,7 @@ from stable_baselines3.common.distributions import make_proba_distribution, Squa
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 from swarm_rl.models.quad_multi_model import QuadMultiEncoder
-from sample_factory.model.core import ModelCoreIdentity
+from sample_factory.model.core import ModelCoreIdentity, default_make_core_func
 from sample_factory.model.decoder import MlpDecoder
 from sample_factory.utils.typing import Config
 
@@ -267,11 +267,13 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         self.cfg = cfg
         # --- Custom modules ---
         self.actor_encoder = QuadMultiEncoder(self.cfg, observation_space)
-        self.actor_core = ModelCoreIdentity(self.cfg, self.actor_encoder.get_out_size())
+        self.actor_core = default_make_core_func(self.cfg, self.actor_encoder.get_out_size())
+        # self.actor_core = ModelCoreIdentity(self.cfg, self.actor_encoder.get_out_size())
         self.actor_decoder = MlpDecoder(self.cfg, self.actor_core.get_out_size())
 
         self.critic_encoder = QuadMultiEncoder(self.cfg, observation_space)
-        self.critic_core = ModelCoreIdentity(self.cfg, self.critic_encoder.get_out_size())
+        self.critic_core = default_make_core_func(self.cfg, self.actor_encoder.get_out_size())
+        # self.critic_core = ModelCoreIdentity(self.cfg, self.critic_encoder.get_out_size())
         self.critic_decoder = MlpDecoder(self.cfg, self.critic_core.get_out_size())
 
         # self.obs_normalizer: ObservationNormalizer = ObservationNormalizer(observation_space, self.cfg)

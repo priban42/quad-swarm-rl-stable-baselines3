@@ -10,14 +10,14 @@ from global_cfg import QuadrotorEnvConfig
 # ----------------------------
 # MODEL_PATH = "PPO/best_model/best_model.zip"
 # MODEL_PATH = "PPO_4_ang/best_model/best_model.zip"
-MODEL_PATH = "PPO_4_repulsive/best_model/best_model.zip"
-# MODEL_PATH = "PPO_4_ang/curriculum_checkpoint_dense/0_049.zip"
+# MODEL_PATH = "PPO_4_repulsive/best_model/best_model.zip"
+MODEL_PATH = "quad_experiment/curriculum_checkpoint/0_366.zip"
 # MODEL_PATH = "PPO_4_repulsive/curriculum_checkpoint_dense/0_498.zip"
 # MODEL_PATH = "PPO_4_controller/checkpoints/quad_swarm_5199168_steps.zip"
 NUM_EPISODES = 5
 MAX_FRAMES = 600  # maximum frames per episode
 episode_duration = 60.0
-VIDEO_PATH = "test4_curr_repulsive_cdist.mp4"
+VIDEO_PATH = "test_128_128_None.mp4"
 FPS = 30
 
 cfg = QuadrotorEnvConfig()
@@ -26,6 +26,9 @@ cfg.seed = 0
 cfg.quads_render = True
 cfg.episode_duration = 60.0
 cfg.quads_mode = "dynamic_repulsive"
+cfg.rnn_size = 128
+cfg.neighbor_hidden_size = 128
+
 # num_of_agents = 4
 # env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
 # env = SB3QuadrotorEnv(seed=3, quads_render=True, episode_duration=episode_duration, num_agents=num_of_agents, quads_mode="static_diff_goal")

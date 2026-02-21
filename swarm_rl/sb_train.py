@@ -25,8 +25,10 @@ def main():
     cfg.logdir = "./quad_experiment"
     num_of_agents = cfg.num_agents
     cfg.num_envs = 12
-    cfg.rnn_size = 64
-    cfg.neighbor_hidden_size = 64
+    cfg.rnn_size = 128
+    cfg.neighbor_hidden_size = 128
+    cfg.use_rnn = True  # use rnn for core. False: core=identity
+    cfg.rnn_type = "gru"  # ["gru", "lstm"]
     # used for curriculum parameters across parallel processes
     manager = mp.Manager()
     cfg.shared_curriculum_param = manager.Value('d', cfg.initial_capture_radius)
@@ -90,7 +92,7 @@ def main():
     model.learn(
         total_timesteps=cfg.total_timesteps,
         callback=[checkpoint_callback, eval_callback, curriculum_callback, note_callback],
-        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}",
+        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}",
         # callback=[checkpoint_callback, eval_callback]
     )
 

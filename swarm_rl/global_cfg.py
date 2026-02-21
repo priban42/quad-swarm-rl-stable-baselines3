@@ -47,6 +47,11 @@ class QuadrotorEnvConfig:
     encoder_extra_fc_layers: int = 0
     env_frameskip: int = 1
 
+    # Core:
+    use_rnn: bool = False  # use rnn for core. False: core=identity
+    rnn_type: str = None  # ["gru", "lstm"]
+    rnn_num_layers: int = 2
+
     # Observations
     num_agents: int = 4
     obs_repr: str = 'cdist_cdistdot_dist_distdot_angle_angledot'
@@ -81,6 +86,7 @@ class QuadrotorEnvConfig:
     # Obstacle Encoder
     obst_hidden_size: int = 256
     obst_encoder_type: str = 'mlp'
+
 
     # Obstacle Collision Reward
     obst_collision_reward: float = 0.0
