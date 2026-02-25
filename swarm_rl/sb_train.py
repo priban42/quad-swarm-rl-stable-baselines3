@@ -49,7 +49,7 @@ def main():
     manager = mp.Manager()
     shared_curriculum_param = manager.Value('d', cfg.initial_capture_radius)
     note=f"{cfg.to_string()}"
-
+    print(note)
     def make_env_fn(rank, seed=0):
         def _init():
             env = SB3QuadrotorEnv(cfg, shared_param=shared_curriculum_param)

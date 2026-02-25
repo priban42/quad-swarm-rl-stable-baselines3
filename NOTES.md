@@ -6,6 +6,8 @@ micromamba activate swarm-rl
 https://graphite.dev/guides/git-pull-overwrite-local-changes#how-to-overwrite-local-changes-with-git-pull
 launch on cluster:
 https://login.rci.cvut.cz/wiki/how_to_start
+python -m swarm_rl.sb_train --num_envs 1
+
 ssh pribavoj@login3.rci.cvut.cz
 git reset --hard && git pull
 source ~/start-quad.sh
