@@ -4,20 +4,20 @@ import cv2
 import numpy as np
 from stable_baselines3 import PPO
 from swarm_rl.env_wrappers.sb3_quad_env import SB3QuadrotorEnv
-from global_cfg import QuadrotorEnvConfig
+from swarm_rl.global_cfg import QuadrotorEnvConfig
 # ----------------------------
 # Configuration
 # ----------------------------
 # MODEL_PATH = "PPO/best_model/best_model.zip"
 # MODEL_PATH = "PPO_4_ang/best_model/best_model.zip"
 # MODEL_PATH = "PPO_4_repulsive/best_model/best_model.zip"
-MODEL_PATH = "quad_experiment/curriculum_checkpoint/0_366.zip"
+MODEL_PATH = "quad_experiment2/curriculum_checkpoint/0_348.zip"
 # MODEL_PATH = "PPO_4_repulsive/curriculum_checkpoint_dense/0_498.zip"
 # MODEL_PATH = "PPO_4_controller/checkpoints/quad_swarm_5199168_steps.zip"
 NUM_EPISODES = 5
 MAX_FRAMES = 600  # maximum frames per episode
 episode_duration = 60.0
-VIDEO_PATH = "test_128_128_None.mp4"
+VIDEO_PATH = "test_128_128_full.mp4"
 FPS = 30
 
 cfg = QuadrotorEnvConfig()

@@ -7,7 +7,7 @@ import gymnasium as gym
 import numpy as np
 
 from stable_baselines3.common.logger import Logger, HParam
-from global_cfg import QuadrotorEnvConfig
+from swarm_rl.global_cfg import QuadrotorEnvConfig
 
 try:
     from tqdm import TqdmExperimentalWarning
@@ -426,10 +426,10 @@ class EvalCallback(EventCallback):
             self.callback.update_locals(locals_)
 
 class CurriculumCallback(EvalCallback):
-    def __init__(self, cfg:QuadrotorEnvConfig, save_path, *args, **kwargs):
+    def __init__(self, cfg:QuadrotorEnvConfig, shared_param, save_path, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cfg = cfg
-        self.shared_param = cfg.shared_curriculum_param
+        self.shared_param = shared_param
         self.save_path = save_path
         self.last_batch = -1
         self.window_size = 40

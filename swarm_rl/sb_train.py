@@ -18,26 +18,26 @@ from swarm_rl.env_wrappers.custom_dummy_vec_env import DummyVecEnv
 import multiprocessing as mp
 
 from swarm_rl.models.ActorCriticPolicyCustom import ActorCriticPolicyCustomSeparateWeights
-from global_cfg import QuadrotorEnvConfig
+from swarm_rl.global_cfg import QuadrotorEnvConfig
 
 def main():
     cfg = QuadrotorEnvConfig()
-    cfg.logdir = "./quad_experiment"
+    cfg.logdir = "./quad_experiment2"
     num_of_agents = cfg.num_agents
     cfg.num_envs = 12
     cfg.rnn_size = 128
     cfg.neighbor_hidden_size = 128
-    cfg.use_rnn = True  # use rnn for core. False: core=identity
-    cfg.rnn_type = "gru"  # ["gru", "lstm"]
+    # cfg.use_rnn = True  # use rnn for core. False: core=identity
+    cfg.rnn_type = "full"  # ["gru", "lstm"]
+    cfg.rnn_num_layers = 3
     # used for curriculum parameters across parallel processes
     manager = mp.Manager()
-    cfg.shared_curriculum_param = manager.Value('d', cfg.initial_capture_radius)
-
+    shared_curriculum_param = manager.Value('d', cfg.initial_capture_radius)
     note=f"{cfg.to_string()}"
 
     def make_env_fn(rank, seed=0):
         def _init():
-            env = SB3QuadrotorEnv(cfg)
+            env = SB3QuadrotorEnv(cfg, shared_param=shared_curriculum_param)
             return env
         return _init
 
@@ -80,6 +80,7 @@ def main():
 
     curriculum_callback = CurriculumCallback(
         cfg=cfg,
+        shared_param=shared_curriculum_param,
         eval_env=eval_env,
         save_path=cfg.logdir,
         eval_freq=1000,

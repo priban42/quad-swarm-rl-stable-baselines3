@@ -25,29 +25,9 @@ import pickle
 
 
 class QuadrotorEnvMulti(gym.Env):
-    def __init__(self,
-                 cfg,
-                 # num_agents, ep_time, rew_coeff, obs_repr,
-                 # cfg,
-                 # # Neighbor
-                 # neighbor_visible_num, neighbor_obs_type, collision_hitbox_radius, collision_falloff_radius,
-                 #
-                 # # Obstacle
-                 # use_obstacles, obst_density, obst_size, obst_spawn_area,
-                 #
-                 # # Aerodynamics, Numba Speed Up, Scenarios, Room, Replay Buffer, Rendering
-                 # use_downwash, use_numba, quads_mode, room_dims, use_replay_buffer, quads_view_mode,
-                 # quads_render,
-                 #
-                 # # Quadrotor Specific (Do Not Change)
-                 # dynamics_params, raw_control, raw_control_zero_middle,
-                 # dynamics_randomize_every, dynamics_change, dyn_sampler_1,
-                 # sense_noise, init_random_state,
-                 # # Rendering
-                 # render_mode='human', curriculum_param=None
-                 ):
+    def __init__(self, cfg, shared_param):
         super().__init__()
-        self.curriculum_param = cfg.shared_curriculum_param
+        self.curriculum_param = shared_param
         # Predefined Parameters
         self.cfg = cfg
         self.rng = np.random.default_rng(seed=self.cfg.seed)
@@ -207,7 +187,7 @@ class QuadrotorEnvMulti(gym.Env):
         self.quads_render = cfg.quads_render
         self.scenes = []
         self.render_speed = 1.0
-        self.quads_formation_size = 2.0
+        self.quads_formation_size = 1.0
         self.reset_scene = False
         if cfg.quads_render:
             self.simulation_start_time = 0

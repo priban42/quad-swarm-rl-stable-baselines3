@@ -30,7 +30,7 @@ class QuadrotorEnvConfig:
     initial_capture_radius: float = 3.0
     capture_radius_decay: float = 0.95
     capture_radius_sr: float = 0.95
-    shared_curriculum_param: Optional[Any] = None
+
     dim_mode: str = "2D_horizontal"
     normalize_input: bool = False
 
@@ -124,9 +124,8 @@ class QuadrotorEnvConfig:
     thrust_noise_ratio: float = 0.05
     device: str = "cuda"
     checkpoint_path: Optional[str] = None
-    curriculum_param: Optional[Any] = None
     train_dir: str = "./sb_train_dir"
-    quad: str = "Crazyflie"
+    # quad: str = "Crazyflie"
     sense_noise: str = "default"
 
     # Control
@@ -135,7 +134,7 @@ class QuadrotorEnvConfig:
     tf_control: bool = False
 
     # Dynamics
-    dynamics_params: str = "DefaultQuad"
+    dynamics_params: str = "Crazyflie"
     dynamics_change: Optional[Any] = None
     dynamics_randomize_every: Optional[Any] = None
     dyn_sampler_1: Optional[Any] = None
@@ -151,6 +150,7 @@ class QuadrotorEnvConfig:
     t2w_std: float = 0.005
     t2t_std: float = 0.0005
     excite: bool = False
+
 
     def to_dict(self) -> dict[str, Any]:
         result = {}
