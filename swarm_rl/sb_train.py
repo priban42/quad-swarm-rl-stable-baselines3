@@ -20,16 +20,31 @@ import multiprocessing as mp
 from swarm_rl.models.ActorCriticPolicyCustom import ActorCriticPolicyCustomSeparateWeights
 from swarm_rl.global_cfg import QuadrotorEnvConfig
 
+
+def parse_args_from_cfg(cfg):
+    parser = argparse.ArgumentParser()
+    for key, value in vars(cfg).items():
+        parser.add_argument(f"--{key}", type=type(value), default=None)
+    return parser.parse_args()
+
+def update_cfg_from_args(cfg, args):
+    for key, value in vars(args).items():
+        if value is not None:
+            setattr(cfg, key, value)
+
 def main():
     cfg = QuadrotorEnvConfig()
     cfg.logdir = "./quad_experiment2"
     num_of_agents = cfg.num_agents
-    cfg.num_envs = 12
+    cfg.num_envs = 1
     cfg.rnn_size = 128
     cfg.neighbor_hidden_size = 128
     # cfg.use_rnn = True  # use rnn for core. False: core=identity
     cfg.rnn_type = "full"  # ["gru", "lstm"]
     cfg.rnn_num_layers = 3
+
+    args = parse_args_from_cfg(cfg)
+    update_cfg_from_args(cfg, args)
     # used for curriculum parameters across parallel processes
     manager = mp.Manager()
     shared_curriculum_param = manager.Value('d', cfg.initial_capture_radius)
