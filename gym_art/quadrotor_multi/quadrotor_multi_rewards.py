@@ -20,15 +20,15 @@ from gym_art.quadrotor_multi.quadrotor_multi_visualization import Quadrotor3DSce
 from gym_art.quadrotor_multi.quadrotor_single_rewards import QuadrotorSingle
 from gym_art.quadrotor_multi.scenarios.mix import create_scenario
 from sample_factory.utils.utils import experiment_dir
-
+from swarm_rl.global_cfg import QuadrotorEnvConfig
 import pickle
 
 
 class QuadrotorEnvMulti(gym.Env):
-    def __init__(self, cfg):
+    def __init__(self, cfg:QuadrotorEnvConfig):
         super().__init__()
         # Predefined Parameters
-        self.cfg = cfg
+        self.cfg:QuadrotorEnvConfig = cfg
         self.rng = np.random.default_rng(seed=self.cfg.seed)
         print(f"SEED:{self.cfg.seed}")
         self.num_agents = cfg.num_agents
@@ -201,7 +201,10 @@ class QuadrotorEnvMulti(gym.Env):
         # self.apply_collision_force = True
         self.apply_collision_force = False
         self.episode_success = False
-        self.capture_radius = 0.2
+        if self.cfg.initial_capture_radius is not None:
+            self.capture_radius = self.cfg.initial_capture_radius
+        else:
+            self.capture_radius = 0.2
 
     def set_capture_radius(self, value):
         self.capture_radius = value

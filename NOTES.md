@@ -10,7 +10,11 @@ launch on cluster:
 ssh pribavoj@login3.rci.cvut.cz
 source ~/start-quad.sh
 srun -p gpufast --gres=gpu:1 --ntasks 1 --cpus-per-task 48 --pty bash -i
-python -m swarm_rl.sb_train --num_envs 47
+python -m swarm_rl.sb_train --num_envs 47 --total_timesteps 20_000_000
+or:
+sbatch experiment_slurm.sh  # run the experiment
+squeue -u $USER  # check the job status
+scancel 10182533  # cancel job
 https://login2.rci.cvut.cz/pun/sys/dashboard/batch_connect/sessions
 
 launch on cluster old:

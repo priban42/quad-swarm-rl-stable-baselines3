@@ -45,6 +45,9 @@ class SB3QuadrotorEnv(gym.Env):
 
         return env
 
+    def set_capture_radius(self, value):
+        self.env.set_capture_radius(value)
+
     # --- SB3-required API ---
     def reset(self, seed=None, options=None):
         # obs, info = self.env.reset(seed=seed, options=options)
