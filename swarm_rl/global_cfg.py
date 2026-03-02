@@ -17,7 +17,7 @@ class QuadrotorEnvConfig:
     gamma: float = 0.99
 
     # Training
-    num_envs: int = 9
+    num_envs: int = 13
     total_timesteps: int = 150_000_000
     learning_rate: float = 1e-4
     logdir: str = "./PPO_4_repulsive"

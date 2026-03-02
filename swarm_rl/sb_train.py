@@ -20,6 +20,8 @@ import multiprocessing as mp
 from swarm_rl.models.ActorCriticPolicyCustom import ActorCriticPolicyCustomSeparateWeights
 from swarm_rl.global_cfg import QuadrotorEnvConfig
 
+import torch
+# torch.set_num_threads(1)
 
 def parse_args_from_cfg(cfg):
     parser = argparse.ArgumentParser()
@@ -32,27 +34,14 @@ def update_cfg_from_args(cfg, args):
         if value is not None:
             setattr(cfg, key, value)
 
-def main():
-    cfg = QuadrotorEnvConfig()
-    cfg.logdir = "./quad_experiment2"
+def train(cfg:QuadrotorEnvConfig):
     num_of_agents = cfg.num_agents
-    cfg.num_envs = 1
-    cfg.rnn_size = 128
-    cfg.neighbor_hidden_size = 128
-    # cfg.use_rnn = True  # use rnn for core. False: core=identity
-    cfg.rnn_type = "full"  # ["gru", "lstm"]
-    cfg.rnn_num_layers = 3
-
-    args = parse_args_from_cfg(cfg)
-    update_cfg_from_args(cfg, args)
     # used for curriculum parameters across parallel processes
-    manager = mp.Manager()
-    shared_curriculum_param = manager.Value('d', cfg.initial_capture_radius)
     note=f"{cfg.to_string()}"
     print(note)
     def make_env_fn(rank, seed=0):
         def _init():
-            env = SB3QuadrotorEnv(cfg, shared_param=shared_curriculum_param)
+            env = SB3QuadrotorEnv(cfg)
             return env
         return _init
 
@@ -95,7 +84,7 @@ def main():
 
     curriculum_callback = CurriculumCallback(
         cfg=cfg,
-        shared_param=shared_curriculum_param,
+        initial_capture_radius=cfg.initial_capture_radius,
         eval_env=eval_env,
         save_path=cfg.logdir,
         eval_freq=1000,
@@ -108,7 +97,7 @@ def main():
     model.learn(
         total_timesteps=cfg.total_timesteps,
         callback=[checkpoint_callback, eval_callback, curriculum_callback, note_callback],
-        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}",
+        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_{cfg.rnn_num_layers}",
         # callback=[checkpoint_callback, eval_callback]
     )
 
@@ -117,6 +106,27 @@ def main():
     env.close()
     eval_env.close()
 
+def parameter_sweep():
+    cfg = QuadrotorEnvConfig()
+    cfg.logdir = "./quad_experiment2"
+    cfg.num_envs = 12
+    cfg.rnn_size = 128
+    cfg.neighbor_hidden_size = 128
+    # cfg.use_rnn = True  # use rnn for core. False: core=identity
+    cfg.rnn_type = "full"  # ["gru", "lstm"]
+    cfg.rnn_num_layers = 3
+
+    args = parse_args_from_cfg(cfg)
+    update_cfg_from_args(cfg, args)
+    for rnn_num_layers in [3, 6, 8]:
+        for rnn_size in [64, 128, 256]:
+            cfg.rnn_size = rnn_size
+            cfg.rnn_num_layers = rnn_num_layers
+            train(cfg)
+    train()
+
+def main():
+    parameter_sweep()
 
 if __name__ == "__main__":
     sys.exit(main())

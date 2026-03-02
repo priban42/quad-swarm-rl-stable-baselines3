@@ -4,10 +4,16 @@ micromamba activate swarm-rl
 
 {topdown,chase,side,global,corner0,corner1,corner2,corner3,topdownfollow}
 https://graphite.dev/guides/git-pull-overwrite-local-changes#how-to-overwrite-local-changes-with-git-pull
-launch on cluster:
 https://login.rci.cvut.cz/wiki/how_to_start
-python -m swarm_rl.sb_train --num_envs 1
 
+launch on cluster:
+ssh pribavoj@login3.rci.cvut.cz
+source ~/start-quad.sh
+srun -p gpufast --gres=gpu:1 --ntasks 1 --cpus-per-task 48 --pty bash -i
+python -m swarm_rl.sb_train --num_envs 47
+https://login2.rci.cvut.cz/pun/sys/dashboard/batch_connect/sessions
+
+launch on cluster old:
 ssh pribavoj@login3.rci.cvut.cz
 git reset --hard && git pull
 source ~/start-quad.sh

@@ -426,16 +426,16 @@ class EvalCallback(EventCallback):
             self.callback.update_locals(locals_)
 
 class CurriculumCallback(EvalCallback):
-    def __init__(self, cfg:QuadrotorEnvConfig, shared_param, save_path, *args, **kwargs):
+    def __init__(self, cfg:QuadrotorEnvConfig, initial_capture_radius, save_path, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cfg = cfg
-        self.shared_param = shared_param
         self.save_path = save_path
         self.last_batch = -1
         self.window_size = 40
         self.window_i = 0
         self.past_successes = np.zeros(self.window_size)
         self.sucess_rate = 0
+        self.current_capture_radius = initial_capture_radius
 
     def _on_step(self):
         # Let the parent EvalCallback do its eval logic
@@ -446,7 +446,7 @@ class CurriculumCallback(EvalCallback):
         finished_count = 0
         change = False
         if self.window_i % self.window_size == 0:
-            self.logger.record("curriculum/capture_radius", self.shared_param.value)
+            self.logger.record("curriculum/capture_radius", self.current_capture_radius)
             self.logger.record("curriculum/sucess_rate", self.sucess_rate)
         for e in self.training_env.reset_infos:
             if e is not None:
@@ -456,10 +456,12 @@ class CurriculumCallback(EvalCallback):
         if change:
             self.sucess_rate = np.sum(self.past_successes)/self.window_size
             if self.sucess_rate > self.cfg.capture_radius_sr:
-                self.shared_param.value = self.cfg.capture_radius_decay*self.shared_param.value
-                print(f"capture radius reduced to:{self.shared_param.value}")
+                self.current_capture_radius = self.cfg.capture_radius_decay*self.current_capture_radius
+                self.training_env.env_method(    "set_capture_radius",self.current_capture_radius)
+                self.eval_env.env_method("set_capture_radius", self.current_capture_radius)
+                print(f"capture radius reduced to:{self.current_capture_radius}")
                 self.past_successes = np.zeros(self.window_size)
-                model_path = self.save_path + f"/curriculum_checkpoint/{self.shared_param.value:0.3f}".replace(".", "_") + ".zip"
+                model_path = self.save_path + f"/curriculum_checkpoint/{self.current_capture_radius:0.3f}".replace(".", "_") + ".zip"
                 self.model.save(model_path)
                 print(f"Saving model checkpoint to {model_path}")
         return result

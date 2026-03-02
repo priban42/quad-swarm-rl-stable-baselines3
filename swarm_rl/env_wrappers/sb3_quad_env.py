@@ -21,24 +21,23 @@ class SB3QuadrotorEnv(gym.Env):
     Converts SampleFactory's cfg-driven setup into a plain Gym env.
     """
 
-    def __init__(self, cfg:QuadrotorEnvConfig, shared_param=None):
+    def __init__(self, cfg:QuadrotorEnvConfig):
         self.cfg = cfg
-        self.shared_param = shared_param
         # self.seed = seed
-        self.env = self._make_env(self.cfg, self.shared_param)
+        self.env = self._make_env(self.cfg)
 
         # self.device = device
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
-    def _make_env(self,cfg:QuadrotorEnvConfig, shared_param):
+    def _make_env(self,cfg:QuadrotorEnvConfig):
 
         # from gym_art.quadrotor_multi.quadrotor_multi_controller import QuadrotorEnvMulti
         from gym_art.quadrotor_multi.quadrotor_multi_rewards import QuadrotorEnvMulti
 
         rew_coeff = DEFAULT_QUAD_REWARD_SHAPING["quad_rewards"]
 
-        env = QuadrotorEnvMulti(cfg=cfg, shared_param=shared_param)
+        env = QuadrotorEnvMulti(cfg=cfg)
 
         # --- 2. Optional wrappers (same as before) ---
         if cfg.use_replay_buffer:

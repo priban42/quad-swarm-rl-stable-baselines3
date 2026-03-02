@@ -25,9 +25,8 @@ import pickle
 
 
 class QuadrotorEnvMulti(gym.Env):
-    def __init__(self, cfg, shared_param):
+    def __init__(self, cfg):
         super().__init__()
-        self.curriculum_param = shared_param
         # Predefined Parameters
         self.cfg = cfg
         self.rng = np.random.default_rng(seed=self.cfg.seed)
@@ -46,8 +45,6 @@ class QuadrotorEnvMulti(gym.Env):
         self.quads_view_mode = cfg.quads_view_mode
 
         # Generate All Quadrotors
-
-
         dynamics_change = dict(
             noise=dict(thrust_noise_ratio=cfg.thrust_noise_ratio),
             damp=dict(vel=0, omega_quadratic=0)
@@ -55,21 +52,7 @@ class QuadrotorEnvMulti(gym.Env):
 
         self.envs = []
         for i in range(self.num_agents):
-            e = QuadrotorSingle(
-                cfg,
-                # Quad Parameters
-                # dynamics_params=dynamics_params, dynamics_change=dynamics_change,
-                # dynamics_randomize_every=dynamics_randomize_every, dyn_sampler_1=dyn_sampler_1,
-                # raw_control=raw_control, raw_control_zero_middle=raw_control_zero_middle, sense_noise=sense_noise,
-                # init_random_state=init_random_state, obs_repr=obs_repr, ep_time=ep_time, room_dims=room_dims,
-                # use_numba=use_numba,
-                # # Neighbor
-                # num_agents=num_agents,
-                # neighbor_obs_type=neighbor_obs_type, num_use_neighbor_obs=self.num_use_neighbor_obs,
-                # # Obstacle
-                # use_obstacles=use_obstacles,
-                rng=self.rng,
-            )
+            e = QuadrotorSingle(cfg, rng=self.rng)
             self.envs.append(e)
 
         # Set Obs & Act
@@ -218,6 +201,11 @@ class QuadrotorEnvMulti(gym.Env):
         # self.apply_collision_force = True
         self.apply_collision_force = False
         self.episode_success = False
+        self.capture_radius = 0.2
+
+    def set_capture_radius(self, value):
+        self.capture_radius = value
+
 
     def all_dynamics(self):
         return tuple(e.dynamics for e in self.envs)
@@ -629,17 +617,13 @@ class QuadrotorEnvMulti(gym.Env):
             rew_formation_score = -wq*np.ones(self.num_agents)*calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
             rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :2], axis=1)
             rew_proximity_custom = -wd*rel_distances
-            if self.curriculum_param is not None:
-                capture_radius = self.curriculum_param.value
-            else:
-                capture_radius = 0.2  # m
             rew_captor = np.zeros(self.num_agents)
             rew_helper = np.zeros(self.num_agents)
             rew_existence = existence*np.ones(self.num_agents)
-            if np.any(capture_radius > rel_distances):
-                rew_captor += w_captor*(capture_radius > rel_distances)
-                rew_helper += w_helper*(capture_radius < rel_distances)
-                dones = capture_radius > rel_distances
+            if np.any(self.capture_radius > rel_distances):
+                rew_captor += w_captor*(self.capture_radius > rel_distances)
+                rew_helper += w_helper*(self.capture_radius < rel_distances)
+                dones = self.capture_radius > rel_distances
                 print("target caught")
                 self.episode_success = True
 
