@@ -294,7 +294,7 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         if cfg.rnn_type == "full" and cfg.rnn_num_layers > 0:
             self.actor_core = ModelCoreMLP(self.cfg, self.actor_encoder.get_out_size())
         else:
-            self.actor_core = default_make_core_func(self.cfg, self.actor_encoder.get_out_size())
+            self.actor_core = ModelCoreIdentity(self.cfg, self.actor_encoder.get_out_size())
         # self.actor_core = ModelCoreIdentity(self.cfg, self.actor_encoder.get_out_size())
         self.actor_decoder = MlpDecoder(self.cfg, self.actor_core.get_out_size())
 
@@ -302,7 +302,7 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         if cfg.rnn_type == "full" and cfg.rnn_num_layers > 0:
             self.critic_core = ModelCoreMLP(self.cfg, self.critic_encoder.get_out_size())
         else:
-            self.critic_core = default_make_core_func(self.cfg, self.critic_encoder.get_out_size())
+            self.critic_core = ModelCoreIdentity(self.cfg, self.critic_encoder.get_out_size())
         # self.critic_core = ModelCoreIdentity(self.cfg, self.critic_encoder.get_out_size())
         self.critic_decoder = MlpDecoder(self.cfg, self.critic_core.get_out_size())
 
@@ -346,31 +346,27 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
 
     def _get_all_params(self):
         all_params = []
-        all_params += list(self.actor_encoder.self_encoder.parameters())  # or whatever internal module they wrap
-        all_params += list(self.actor_encoder.feed_forward.parameters())
-        if self.actor_encoder.neighbor_encoder is not None:
-            all_params += list(self.actor_encoder.neighbor_encoder.embedding_mlp.parameters())
-            all_params += list(self.actor_encoder.neighbor_encoder.neighbor_value_mlp.parameters())
-            all_params += list(self.actor_encoder.neighbor_encoder.attention_mlp.parameters())
+        all_params += self.critic_encoder.parameters()
+        # all_params += list(self.actor_encoder.self_encoder.parameters())  # or whatever internal module they wrap
+        # all_params += list(self.actor_encoder.feed_forward.parameters())
+        # if self.actor_encoder.neighbor_encoder is not None:
+        #     all_params += list(self.actor_encoder.neighbor_encoder.embedding_mlp.parameters())
+        #     all_params += list(self.actor_encoder.neighbor_encoder.neighbor_value_mlp.parameters())
+        #     all_params += list(self.actor_encoder.neighbor_encoder.attention_mlp.parameters())
         if isinstance(self.actor_core, ModelCoreMLP):
             all_params += list(self.actor_core.core.parameters())
-        # if self.actor_encoder.use_obstacles:
-        #     all_params += list(self.actor_encoder.obstacle_encoder.parameters(recurse=True))
-        # all_params += list(self.actor_encoder.parameters())  # or whatever internal module they wrap
         all_params += list(self.actor_decoder.mlp.parameters())
         all_params += self.value_net.parameters()
 
-        all_params += list(self.critic_encoder.self_encoder.parameters())  # or whatever internal module they wrap
-        all_params += list(self.critic_encoder.feed_forward.parameters())
-        if self.critic_encoder.neighbor_encoder is not None:
-            all_params += list(self.critic_encoder.neighbor_encoder.embedding_mlp.parameters())
-            all_params += list(self.critic_encoder.neighbor_encoder.neighbor_value_mlp.parameters())
-            all_params += list(self.critic_encoder.neighbor_encoder.attention_mlp.parameters())
+        all_params += self.critic_encoder.parameters()
+        # all_params += list(self.critic_encoder.self_encoder.parameters())  # or whatever internal module they wrap
+        # all_params += list(self.critic_encoder.feed_forward.parameters())
+        # if self.critic_encoder.neighbor_encoder is not None:
+        #     all_params += list(self.critic_encoder.neighbor_encoder.embedding_mlp.parameters())
+        #     all_params += list(self.critic_encoder.neighbor_encoder.neighbor_value_mlp.parameters())
+        #     all_params += list(self.critic_encoder.neighbor_encoder.attention_mlp.parameters())
         if isinstance(self.critic_core, ModelCoreMLP):
             all_params += list(self.critic_core.core.parameters())
-        # if self.critic_encoder.use_obstacles:
-        #     all_params += list(self.critic_encoder.obstacle_encoder.parameters(recurse=True))
-        # all_params += list(self.critic_encoder.parameters())  # or whatever internal module they wrap
         all_params += list(self.critic_decoder.mlp.parameters())
 
         # all_params += self.action_parameterization.learned_stddev

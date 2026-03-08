@@ -509,8 +509,59 @@ def sample_camera_measurements(center):
     a_sigma = np.std(np.array(all_a))
     return d_sigma, a_sigma
 
+def sample_camera_measurements_raw(center):
+    all_d = []
+    all_a = []
+    for i in range(5000):
+        d, a = simulate_camera_measurement(center, 0.2, 0.035, 2)
+        all_d.append(d)
+        all_a.append(a)
+    return all_d, all_a
+
+def visualize_noise_vs_distance(distances, n_samples=500, figsize=(12, 5)):
+    """
+    Visualize how measurement noise varies with distance.
+
+    Args:
+        distances: list or array of distances to evaluate noise at
+        n_samples:  number of samples per distance (default 500)
+        figsize:    figure size tuple (default (14, 10))
+    """
+    dist_std = []
+    dist_mean = []
+    all_all_d = []
+    for d in distances:
+        center = np.array([0, d])  # place target at given distance along x-axis
+        all_d, all_a = sample_camera_measurements_raw(center)
+        all_all_d.append(all_d)
+        dist_std.append(np.std(all_d))
+        dist_mean.append(np.mean(all_d))
+    all_all_d = np.array(all_all_d)
+
+    dist_std = np.array(dist_std)
+    dist_mean = np.array(dist_mean)
+
+    fig, (ax1) = plt.subplots(1, 1, figsize=figsize)
+    fig.suptitle("Camera Distance Measurement Noise vs Distance", fontsize=16, fontweight="bold")
+
+    # ── 1. Distance std vs distance ──────────────────────────────────────────
+    ax1.plot(distances, np.quantile(all_all_d, 0.50, axis=1), "-", color="#1f77b4", linewidth=2, markersize=6)
+    ax1.fill_between(distances, np.quantile(all_all_d, 0.05, axis=1), np.quantile(all_all_d, 0.95, axis=1), alpha=0.15, color="#1f77b4")
+    ax1.set_xlabel("True Distance (m)")
+    ax1.set_ylabel("Estimated distance median + 5% quantiles")
+    ax1.set_title("Estimated distance noise")
+    ax1.grid(True, linestyle="--", alpha=0.5)
+
+    plt.savefig("noise_vs_distance.png", dpi=150, bbox_inches="tight")
+    plt.show()
+    print("Figure saved to noise_vs_distance.png")
+
 def main():
     # ── scene setup ───────────────────────────────────────────────────────────
+
+    distances = np.linspace(2, 10, 20)
+    visualize_noise_vs_distance(distances)
+
 
     viz = SceneVisualizer(fov_deg=70, max_range=15, dark_theme=False)
 

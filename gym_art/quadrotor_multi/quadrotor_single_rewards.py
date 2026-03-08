@@ -528,8 +528,8 @@ class QuadrotorSingle:
             else:
                 # make sure we're sort of pointing towards goal (for mellinger controller)
                 rotation = randyaw()
-                while np.dot(rotation[:, 0], to_xyhat(-pos)) < 0.5:
-                    rotation = randyaw()
+                # while np.dot(rotation[:, 0], to_xyhat(-pos)) < 0.5:
+                #     rotation = randyaw()
 
         self.init_state = [pos, vel, rotation, omega]
         self.dynamics.set_state(pos, vel, rotation, omega)

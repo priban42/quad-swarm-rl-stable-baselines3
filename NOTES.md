@@ -29,7 +29,7 @@ squeue -u $USER  # check the job status
 scancel 10182533  # cancel job
 
 tensorboard --logdir ./swarm_rl/PPO_1_ang/tb/PPO_1
-tensorboard --logdir ./swarm_rl/quad_experiment --host 0.0.0.0 --port 6006
+tensorboard --logdir ./swarm_rl/quad_experiment2 --host 0.0.0.0 --port 6006
 
 
 train wandb:

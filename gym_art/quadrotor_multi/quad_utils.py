@@ -130,7 +130,8 @@ def clamp_norm(x, maxnorm):
 
 # project a vector into the x-y plane and normalize it.
 def to_xyhat(vec):
-    v = deepcopy(vec)
+    v = np.array([vec[0], vec[1], 0])
+    # v = deepcopy(vec)
     v[2] = 0
     v, _ = normalize(v)
     return v

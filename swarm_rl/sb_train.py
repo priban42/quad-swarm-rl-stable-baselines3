@@ -114,15 +114,19 @@ def parameter_sweep():
     cfg.neighbor_hidden_size = 128
     # cfg.use_rnn = True  # use rnn for core. False: core=identity
     cfg.rnn_type = "full"  # ["gru", "lstm"]
+    cfg.neighbor_encoder_type = "mlp"
     cfg.rnn_num_layers = 3
+    cfg.total_timesteps = 30_000_000
 
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
-    for rnn_num_layers in [3, 6, 8]:
-        for rnn_size in [64, 128, 256]:
-            cfg.rnn_size = rnn_size
-            cfg.rnn_num_layers = rnn_num_layers
-            train(cfg)
+    for rnn_num_layers in [0]:
+        for rnn_size in [128]:
+            for neighbor_encoder_type in ["attention"]:
+                cfg.rnn_size = rnn_size
+                cfg.rnn_num_layers = rnn_num_layers
+                cfg.neighbor_encoder_type = neighbor_encoder_type
+                train(cfg)
     train()
 
 def main():

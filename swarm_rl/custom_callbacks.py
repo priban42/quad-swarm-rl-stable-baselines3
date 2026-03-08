@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from stable_baselines3.common import base_class
 
 from stable_baselines3.common.callbacks import BaseCallback
+import psutil, os
 
 class EventCallback(BaseCallback):
     """
