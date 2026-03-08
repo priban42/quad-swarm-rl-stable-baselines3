@@ -70,6 +70,7 @@ class QuadrotorEnvMulti(gym.Env):
         self.omega = np.zeros([self.num_agents, 3])
         self.rel_pos = np.zeros((self.num_agents, self.num_agents, 3))
         self.rel_vel = np.zeros((self.num_agents, self.num_agents, 3))
+        self.heading = np.zeros([self.num_agents])
 
         # Reward
         self.rew_coeff = dict(
@@ -255,6 +256,12 @@ class QuadrotorEnvMulti(gym.Env):
             rel_angle = target_angle_world - angle_world
             rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
             ret = np.concatenate((ret, rel_angle[:, np.newaxis]), axis=1)
+        if "heading" in self.envs[i].neighbor_obs_type:
+            heading = self.heading[i]
+            neighbour_heading = self.heading[indices]
+            rel_heading = neighbour_heading - heading
+            rel_heading = (rel_heading + np.pi) % (2 * np.pi) - np.pi
+            ret = np.concatenate((ret, rel_heading[:, np.newaxis]), axis=1)
         if "npos" in self.envs[i].neighbor_obs_type:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
@@ -519,6 +526,7 @@ class QuadrotorEnvMulti(gym.Env):
                 infos.append(info)
 
                 self.pos[i, :] = self.envs[i].dynamics.pos
+                self.heading[i] = self.envs[i].pre_controller.angle
 
             # 1. Calculate collisions: 1) between drones 2) with obstacles 3) with room
             # 1) Collisions between drones

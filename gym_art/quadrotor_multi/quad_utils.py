@@ -46,7 +46,8 @@ QUADS_NEIGHBOR_OBS_TYPE = {
     'npos':3,
     'dist':1,
     'angle':1,
-    'dist_angle':2
+    'dist_angle':2,
+    'dist_angle_heading':3,
 }
 
 QUADS_OBSTACLE_OBS_TYPE = {

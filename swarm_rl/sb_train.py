@@ -117,17 +117,20 @@ def parameter_sweep():
     cfg.neighbor_encoder_type = "mlp"
     cfg.rnn_num_layers = 3
     cfg.total_timesteps = 30_000_000
+    cfg.neighbor_obs_type = "dist_angle_heading"
 
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
     for rnn_num_layers in [0]:
         for rnn_size in [128]:
-            for neighbor_encoder_type in ["attention"]:
-                cfg.rnn_size = rnn_size
-                cfg.rnn_num_layers = rnn_num_layers
-                cfg.neighbor_encoder_type = neighbor_encoder_type
-                train(cfg)
-    train()
+            for neighbor_encoder_type in ["attention", "mlp"]:
+                for neighbor_obs_type in ["dist_angle", "dist_angle_heading"]:
+                    cfg.neighbor_obs_type = neighbor_obs_type
+                    cfg.rnn_size = rnn_size
+                    cfg.rnn_num_layers = rnn_num_layers
+                    cfg.neighbor_encoder_type = neighbor_encoder_type
+                    train(cfg)
+    # train()
 
 def main():
     parameter_sweep()
