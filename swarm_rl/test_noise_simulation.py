@@ -473,7 +473,7 @@ def simulate_camera_measurement(
                         focal_length_m: float,
                         camera_noise_px: float,
                         fov_deg:float = 70,
-                        camera_resolution:float = 1080.0):
+                        camera_resolution:float = 640.0):
 
     l_orig = np.linalg.norm(center_2d)
     angle_orig = np.arctan2(center_2d[0], center_2d[1])
@@ -501,8 +501,8 @@ def simulate_camera_measurement(
 def sample_camera_measurements(center):
     all_d = []
     all_a = []
-    for i in range(500):
-        d, a = simulate_camera_measurement(center, 0.2, 0.035, 2)
+    for i in range(1000):
+        d, a = simulate_camera_measurement(center, 0.2, 0.035, 3)
         all_d.append(d)
         all_a.append(a)
     d_sigma = np.std(np.array(all_d))
@@ -546,6 +546,7 @@ def visualize_noise_vs_distance(distances, n_samples=500, figsize=(12, 5)):
 
     # ── 1. Distance std vs distance ──────────────────────────────────────────
     ax1.plot(distances, np.quantile(all_all_d, 0.50, axis=1), "-", color="#1f77b4", linewidth=2, markersize=6)
+    ax1.plot(distances, distances, "--", color="blue", linewidth=2, markersize=6)
     ax1.fill_between(distances, np.quantile(all_all_d, 0.05, axis=1), np.quantile(all_all_d, 0.95, axis=1), alpha=0.15, color="#1f77b4")
     ax1.set_xlabel("True Distance (m)")
     ax1.set_ylabel("Estimated distance median + 5% quantiles")

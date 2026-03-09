@@ -113,7 +113,7 @@ def parameter_sweep():
     cfg.rnn_size = 128
     cfg.neighbor_hidden_size = 128
     # cfg.use_rnn = True  # use rnn for core. False: core=identity
-    cfg.rnn_type = "full"  # ["gru", "lstm"]
+    cfg.rnn_type = "full"
     cfg.neighbor_encoder_type = "mlp"
     cfg.rnn_num_layers = 3
     cfg.total_timesteps = 30_000_000
@@ -121,10 +121,10 @@ def parameter_sweep():
 
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
-    for rnn_num_layers in [0]:
+    for rnn_num_layers in [3]:
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention", "mlp"]:
-                for neighbor_obs_type in ["dist_angle", "dist_angle_heading"]:
+                for neighbor_obs_type in ["dist_angle"]:
                     cfg.neighbor_obs_type = neighbor_obs_type
                     cfg.rnn_size = rnn_size
                     cfg.rnn_num_layers = rnn_num_layers
