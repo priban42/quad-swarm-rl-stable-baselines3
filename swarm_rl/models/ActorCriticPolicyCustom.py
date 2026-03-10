@@ -346,7 +346,7 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
 
     def _get_all_params(self):
         all_params = []
-        all_params += self.critic_encoder.parameters()
+        all_params += self.actor_encoder.parameters()
         # all_params += list(self.actor_encoder.self_encoder.parameters())  # or whatever internal module they wrap
         # all_params += list(self.actor_encoder.feed_forward.parameters())
         # if self.actor_encoder.neighbor_encoder is not None:
@@ -378,22 +378,24 @@ class ActorCriticPolicyCustomSeparateWeights(ActorCriticPolicy):
         return all_params
 
     def _initialize_all_weights(self):
-        self.initialize_weights(self.actor_encoder.self_encoder)  # or whatever internal module they wrap
-        self.initialize_weights(self.actor_encoder.feed_forward)
-        if self.actor_encoder.neighbor_encoder is not None:
-            self.initialize_weights(self.actor_encoder.neighbor_encoder.embedding_mlp)  # or whatever internal module they wrap
-            self.initialize_weights(self.actor_encoder.neighbor_encoder.neighbor_value_mlp)  # or whatever internal module they wrap
-            self.initialize_weights(self.actor_encoder.neighbor_encoder.attention_mlp)  # or whatever internal module they wrap
+        # self.initialize_weights(self.actor_encoder.self_encoder)  # or whatever internal module they wrap
+        # self.initialize_weights(self.actor_encoder.feed_forward)
+        # if self.actor_encoder.neighbor_encoder is not None:
+        #     self.initialize_weights(self.actor_encoder.neighbor_encoder.embedding_mlp)  # or whatever internal module they wrap
+        #     self.initialize_weights(self.actor_encoder.neighbor_encoder.neighbor_value_mlp)  # or whatever internal module they wrap
+        #     self.initialize_weights(self.actor_encoder.neighbor_encoder.attention_mlp)  # or whatever internal module they wrap
+        self.initialize_weights(self.actor_encoder)
         # if self.actor_encoder.use_obstacles:
         #     self.initialize_weights(self.actor_encoder.obstacle_encoder)
         self.initialize_weights(self.actor_decoder.mlp)
 
-        self.initialize_weights(self.critic_encoder.self_encoder)  # or whatever internal module they wrap
-        self.initialize_weights(self.critic_encoder.feed_forward)
-        if self.critic_encoder.neighbor_encoder is not None:
-            self.initialize_weights(self.critic_encoder.neighbor_encoder.embedding_mlp)  # or whatever internal module they wrap
-            self.initialize_weights(self.critic_encoder.neighbor_encoder.neighbor_value_mlp)  # or whatever internal module they wrap
-            self.initialize_weights(self.critic_encoder.neighbor_encoder.attention_mlp)  # or whatever internal module they wrap
+        # self.initialize_weights(self.critic_encoder.self_encoder)  # or whatever internal module they wrap
+        # self.initialize_weights(self.critic_encoder.feed_forward)
+        # if self.critic_encoder.neighbor_encoder is not None:
+        #     self.initialize_weights(self.critic_encoder.neighbor_encoder.embedding_mlp)  # or whatever internal module they wrap
+        #     self.initialize_weights(self.critic_encoder.neighbor_encoder.neighbor_value_mlp)  # or whatever internal module they wrap
+        #     self.initialize_weights(self.critic_encoder.neighbor_encoder.attention_mlp)  # or whatever internal module they wrap
+        self.initialize_weights(self.critic_encoder)
         # if self.critic_encoder.use_obstacles:
         #     self.initialize_weights(self.critic_encoder.obstacle_encoder)
         self.initialize_weights(self.critic_decoder.mlp)
