@@ -123,8 +123,8 @@ def parameter_sweep():
     update_cfg_from_args(cfg, args)
     for rnn_num_layers in [3, 6]:
         for rnn_size in [128]:
-            for neighbor_encoder_type in ["mlp"]:
-                for neighbor_obs_type in ["dist_angle"]:
+            for neighbor_encoder_type in ["attention"]:
+                for neighbor_obs_type in ["dist_angle", "dist_angle_heading"]:
                     cfg.neighbor_obs_type = neighbor_obs_type
                     cfg.rnn_size = rnn_size
                     cfg.rnn_num_layers = rnn_num_layers
