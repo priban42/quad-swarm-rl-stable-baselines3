@@ -240,13 +240,13 @@ class QuadrotorEnvMulti(gym.Env):
             # if not specified explicitly, consider all neighbors
             indices = [j for j in range(self.num_agents) if j != i]
         ret = np.zeros((len(indices), 0))
-        if "dist" in self.envs[i].neighbor_obs_type:
+        if "dist" in self.envs[i].neighbor_obs_type_set:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
             pos_rel = pos_neighbor - cur_pos
             dist_rel = np.linalg.norm(pos_rel, axis=1)
             ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
-        if "angle" in self.envs[i].neighbor_obs_type:
+        if "angle" in self.envs[i].neighbor_obs_type_set:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
             pos_rel = pos_neighbor - cur_pos
@@ -256,13 +256,29 @@ class QuadrotorEnvMulti(gym.Env):
             rel_angle = target_angle_world - angle_world
             rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
             ret = np.concatenate((ret, rel_angle[:, np.newaxis]), axis=1)
-        if "heading" in self.envs[i].neighbor_obs_type:
+        if "sangle" in self.envs[i].neighbor_obs_type_set:  #
+            cur_pos = self.pos[i]
+            pos_neighbor = np.stack([self.pos[j] for j in indices])
+            pos_rel = pos_neighbor - cur_pos
+            angle_world = self.envs[i].pre_controller.angle
+            rel_pos_norm = pos_rel / np.linalg.norm(pos_rel, axis=1)[:, np.newaxis]
+            target_angle_world = np.arctan2(rel_pos_norm[:, 1], rel_pos_norm[:, 0])
+            rel_angle = target_angle_world - angle_world
+            rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
+            ret = np.concatenate((ret, np.vstack((np.cos(rel_angle), np.sin(rel_angle))).T), axis=1)
+        if "heading" in self.envs[i].neighbor_obs_type_set:
             heading = self.heading[i]
             neighbour_heading = self.heading[indices]
             rel_heading = neighbour_heading - heading
             rel_heading = (rel_heading + np.pi) % (2 * np.pi) - np.pi
             ret = np.concatenate((ret, rel_heading[:, np.newaxis]), axis=1)
-        if "npos" in self.envs[i].neighbor_obs_type:
+        if "sheading" in self.envs[i].neighbor_obs_type_set:  # smooth heading
+            heading = self.heading[i]
+            neighbour_heading = self.heading[indices]
+            rel_heading = neighbour_heading - heading
+            rel_heading = (rel_heading + np.pi) % (2 * np.pi) - np.pi
+            ret = np.concatenate((ret, np.vstack((np.cos(rel_heading), np.sin(rel_heading))).T), axis=1)
+        if "npos" in self.envs[i].neighbor_obs_type_set:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
             pos_rel = pos_neighbor - cur_pos
@@ -276,28 +292,28 @@ class QuadrotorEnvMulti(gym.Env):
                 R_pc = self.rotation_matrix(cross, angle)
                 pos_rel + R_pc@p_noise
             ret = np.concatenate((ret, pos_rel), axis=1)
-        elif "pos" in self.envs[i].neighbor_obs_type:
+        if "pos" in self.envs[i].neighbor_obs_type_set:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
             pos_rel = pos_neighbor - cur_pos
             ret = np.concatenate((ret, pos_rel), axis=1)
-        if "vel" in self.envs[i].neighbor_obs_type:
+        if "vel" in self.envs[i].neighbor_obs_type_set:
             cur_vel = self.vel[i]
             vel_neighbor = np.stack([self.vel[j] for j in indices])
             vel_rel = vel_neighbor - cur_vel
             ret = np.concatenate((ret, vel_rel), axis=1)
-        if "Rz" in self.envs[i].neighbor_obs_type:
+        if "Rz" in self.envs[i].neighbor_obs_type_set:
             cur_R = self.rot[i]
             cur_R_inv = cur_R.T
             Rz_rel = np.stack([cur_R_inv@self.rot[j][:3, 2] for j in indices])
             ret = np.concatenate((ret, Rz_rel), axis=1)
-        elif "R" in self.envs[i].neighbor_obs_type:
+        elif "R" in self.envs[i].neighbor_obs_type_set:
             cur_R = self.rot[i]
             cur_R_inv = cur_R.T
             R_rel = np.stack([cur_R_inv@self.rot[j] for j in indices])
             R_rel_flat = R_rel.reshape(R_rel.shape[0], -1)
             ret = np.concatenate((ret, R_rel_flat), axis=1)
-        if "rng3" in self.envs[i].neighbor_obs_type:
+        if "rng3" in self.envs[i].neighbor_obs_type_set:
             ret = np.concatenate([ret, np.random.rand(len(indices), 3)], axis=1)
         return ret
 

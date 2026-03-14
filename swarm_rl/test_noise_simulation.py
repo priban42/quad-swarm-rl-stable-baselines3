@@ -592,24 +592,23 @@ def main():
             center=pos, camera_pos=np.array([0.0, 0.0]), uncertainty_m=d_sigma
         )
 
-    # ── covariance ellipses (e.g. from EKF) ───────────────────────────────────
-    # cov_a = np.array([[0.4, 0.2],
-    #                   [0.2, 0.8]])
-    # viz.draw_covariance_ellipse(np.array([3.0, 8.0]), cov_a, n_std=2, label="2σ")
-    #
-    # cov_b = np.array([[1.2, -0.3],
-    #                   [-0.3, 0.5]])
-    # viz.draw_covariance_ellipse(np.array([-4.0, 10.0]), cov_b, n_std=2, label="2σ")
-
-
-
-    # ── arbitrary lines (e.g. associations, ground truth) ─────────────────────
-    # viz.draw_line(
-    #     np.array([3.0, 8.0]), np.array([-4.0, 10.0]),
-    #     label="association", linestyle=":", lw=1.0,
-    # )
-
     viz.show()
 
+def test_smooth_angle():
+    # const Eigen::Vector3d xw = Re.col(0);
+    # const double ego_heading = std::atan2(xw.y(), xw.x());
+    # const double target_heading = target_history_[i_delayed](9);
+    # const double d = std::atan2(std::sin(target_heading - ego_heading), std::cos(target_heading - ego_heading));
+    # noisy_observation(index + 3) = std::sin(d);
+    # noisy_observation(index + 4) = std::cos(d);
+    for i in range(1000):
+        eh = np.random.rand()*2*np.pi
+        th = np.random.rand()*2*np.pi
+        rh = th - eh
+        d = np.arctan2(np.sin(rh), np.cos(rh))
+        assert np.allclose(rh, d)
+    pass
+
 if __name__ == "__main__":
-    main()
+    test_smooth_angle()
+    # main()

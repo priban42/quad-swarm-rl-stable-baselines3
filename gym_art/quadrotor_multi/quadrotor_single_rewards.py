@@ -246,6 +246,7 @@ class QuadrotorSingle:
         # Neighbor info
         self.num_agents = cfg.num_agents
         self.neighbor_obs_type = cfg.neighbor_obs_type
+        self.neighbor_obs_type_set = set(self.neighbor_obs_type.split("_"))
 
         if cfg.neighbor_visible_num == -1:
             self.num_use_neighbor_obs = self.num_agents - 1
@@ -326,6 +327,7 @@ class QuadrotorSingle:
             "Rz": [-np.ones(3), np.ones(3)],
             "omega": [-self.dynamics.omega_max * np.ones(3), self.dynamics.omega_max * np.ones(3)],
             "angle": [-np.pi*np.ones(1), np.pi*np.ones(1)],
+            "sangle": [-np.ones(2), np.ones(2)],
             "aw": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "cdist": [0*np.ones(1), self.room_length*np.ones(1)/2],
             "cdistdot": [-self.dynamics.vxyz_max * np.ones(1), self.dynamics.vxyz_max * np.ones(1)],
@@ -375,6 +377,10 @@ class QuadrotorSingle:
             obs_comps = obs_comps + (['dist'] + ['angle']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'dist_angle_heading' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['dist'] + ['angle'] + ['angle']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'dist_sangle' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['dist'] + ['sangle']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'dist_sangle_sheading' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['dist'] + ['sangle'] + ['sangle']) * self.num_use_neighbor_obs
 
         if self.use_obstacles:
             obs_comps = obs_comps + ["octmap"]
