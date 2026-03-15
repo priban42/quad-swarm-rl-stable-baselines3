@@ -126,11 +126,13 @@ def parameter_sweep():
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
                 for neighbor_obs_type in ["ndist_nsangle"]:
-                    cfg.neighbor_obs_type = neighbor_obs_type
-                    cfg.rnn_size = rnn_size
-                    cfg.rnn_num_layers = rnn_num_layers
-                    cfg.neighbor_encoder_type = neighbor_encoder_type
-                    train(cfg)
+                    for cam_px_noise in [3, 1, 0.3]:
+                        cfg.neighbor_obs_type = neighbor_obs_type
+                        cfg.rnn_size = rnn_size
+                        cfg.rnn_num_layers = rnn_num_layers
+                        cfg.neighbor_encoder_type = neighbor_encoder_type
+                        cfg.pixel_noise_cam = cam_px_noise
+                        train(cfg)
     # train()
 
 def main():
