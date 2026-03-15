@@ -9,7 +9,15 @@ class QuadrotorEnvConfig:
     # Quadrotor features
 
     _changes = {}
-    #ppo
+
+    # Camera
+    focal_length_cam: float = 0.035
+    n_cameras: int = 3
+    target_size_cam: float = 0.2
+    neighbour_size_cam: float = 0.2
+    pixel_noise_cam:float = 3
+
+
     # PPO
     n_steps: int = 512
     batch_size: int = 1024

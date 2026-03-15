@@ -32,6 +32,7 @@ QUADS_OBS_REPR = {
     'aw_awdot_dist_distdot_angle_angledot': 6,
     'cdist_cdistdot_dist_distdot_angle_angledot': 6,
     'cdist_cdistdot_dist_distdot_sangle_angledot': 7,
+    'cdist_cdistdot_ndist_distdot_nsangle_angledot': 7,
     'xyz_vxyz_R_omega_floor': 19,
     'xyz_vxyz_R_omega_wall': 24,
 }
@@ -49,8 +50,10 @@ QUADS_NEIGHBOR_OBS_TYPE = {
     'angle':1,
     'dist_angle':2,
     'dist_sangle':3,
+    'ndist_nsangle':3,
     'dist_angle_heading':3,
     'dist_sangle_sheading':5,
+
 
 }
 

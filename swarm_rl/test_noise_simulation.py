@@ -467,36 +467,133 @@ def circle_intersection(c1: np.ndarray, r1: float, c2: np.ndarray, r2: float) ->
     p2 = mid - h * perp
     return p1, p2
 
+def circle_intersection_vect(c1: np.ndarray, r1: float, c2: np.ndarray, r2) -> np.ndarray:
+    """
+    Args:
+        c1: (2, N) centers of circle 1
+        r1: radius of circle 1 (scalar)
+        c2: (2, N) centers of circle 2
+        r2: (N,) or scalar radius of circle 2
+
+    Returns:
+        p1, p2: each (2, N)
+    """
+    d = np.linalg.norm(c2 - c1, axis=0)           # (N,)
+    a = (r1**2 - r2**2 + d**2) / (2 * d)          # (N,)
+    h = np.sqrt(r1**2 - a**2)                      # (N,)
+
+    radial = (c2 - c1) / d                         # (2, N)
+    mid = c1 + a * radial                          # (2, N)
+
+    perp = np.array([-radial[1], radial[0]])       # (2, N)
+
+    p1 = mid + h * perp                            # (2, N)
+    p2 = mid - h * perp                            # (2, N)
+    return p1, p2
+
+def R(a):
+    return np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
+
+def get_camera_angle(rel_angle, n):
+    """
+    Args:
+        rel_angle: the angle of a detected point relative to the drone orientation (-pi, pi)
+        n: number of cameras
+
+    Returns: angle of the best camera
+    """
+    cam_idx = np.round((rel_angle%(2*np.pi)) / (2 * np.pi / n)).astype(int) % n
+    return cam_idx*2*np.pi/n
+
+
 def simulate_camera_measurement(
-                        center_2d: np.ndarray,
+                        rel_pos: np.ndarray,
                         known_size_m: float,
                         focal_length_m: float,
                         camera_noise_px: float,
+                        global_angle: float = 0,
                         fov_deg:float = 70,
-                        camera_resolution:float = 640.0):
+                        camera_resolution:float = 640.0,
+                        cameras_num = 1):
 
-    l_orig = np.linalg.norm(center_2d)
-    angle_orig = np.arctan2(center_2d[0], center_2d[1])
+    rel_pose = R(-global_angle) @ rel_pos
+    l_orig = np.linalg.norm(rel_pos)
+    angle_orig = np.arctan2(rel_pose[1], rel_pose[0])
+    camera_angle = get_camera_angle(angle_orig, cameras_num)  # angle of the selected camera wrt the drone
+    center_2d = R(-camera_angle) @ rel_pose
     r = known_size_m/2
     f = focal_length_m
     w = 2 * np.tan((fov_deg/2) * np.pi / 180) * f  # widh of the sensor
-    # dir = center_2d/y
-    # perp = np.array(-dir[1], dir[0])
+
     x1, x2 = circle_intersection(center_2d, r, center_2d/2, np.linalg.norm(center_2d)/2)
-    u1_orig = x1[0] * f/x1[1]
-    u2_orig = x2[0] * f/x2[1]
-    u1_px = u1_orig*camera_resolution/w
-    u2_px = u2_orig*camera_resolution/w
-    u1_px += np.random.normal(0)*camera_noise_px
-    u2_px += np.random.normal(0)*camera_noise_px
+    u1_orig = x1[1] * f/x1[0]
+    u2_orig = x2[1] * f/x2[0]
+    u1_px_orig = u1_orig*camera_resolution/w
+    u2_px_orig = u2_orig*camera_resolution/w
+    u1_px = u1_px_orig + np.random.normal(0)*camera_noise_px
+    u2_px = u2_px_orig + np.random.normal(0)*camera_noise_px
     u1 = u1_px*w/camera_resolution
     u2 = u2_px*w/camera_resolution
     alpha = abs(arctan(u1/f)-arctan(u2/f))
     l = r/(np.sin(alpha/2))
     # assert abs(l-l_orig)< 0.00001
-    dist = focal_length_m*known_size_m/abs(u1-u2)
-    angle = (arctan(u1/f) + arctan(u2/f))/2
-    return dist, angle
+    angle_cam = (arctan(u1/f) + arctan(u2/f))/2  # angle in the selected camera frame
+    angle_rel = angle_cam + camera_angle  # angle in the drone frame
+    angle_rel = (angle_rel + np.pi) % (2 * np.pi) - np.pi
+    if np.isnan(l):
+        l = 0
+        angle_rel = 0
+    return l, angle_rel
+
+def simulate_camera_measurement_vect(
+        rel_pos: np.ndarray,          # (2, N)
+        known_size_m: float,
+        focal_length_m: float,
+        camera_noise_px: float,
+        global_angle: np.ndarray,
+        fov_deg: float = 70,
+        camera_resolution: float = 640.0,
+        cameras_num: int = 1):
+    # rel_pose = R(-global_angle) @ rel_pos
+    c, s = np.cos(-global_angle), np.sin(-global_angle) # (2, N)
+    rel_pose = np.array([c * rel_pos[0] - s * rel_pos[1],
+                           s * rel_pos[0] + c * rel_pos[1]])    # (2, N)
+    angle_orig = np.arctan2(rel_pose[1], rel_pose[0])             # (N,)
+    camera_angle = get_camera_angle(angle_orig, cameras_num)      # (N,)
+
+    # rotate each point by its own camera angle
+    c, s = np.cos(-camera_angle), np.sin(-camera_angle)           # (N,)
+    center_2d = np.array([c * rel_pose[0] - s * rel_pose[1],
+                           s * rel_pose[0] + c * rel_pose[1]])    # (2, N)
+
+    r = known_size_m / 2
+    f = focal_length_m
+    w = 2 * np.tan((fov_deg / 2) * np.pi / 180) * f
+
+    x1, x2 = circle_intersection_vect(center_2d, r,
+                                  center_2d / 2,
+                                  np.linalg.norm(center_2d, axis=0) / 2)  # (2, N) each
+
+    u1_orig = x1[1] * f / x1[0]
+    u2_orig = x2[1] * f / x2[0]
+    u1_px = u1_orig * camera_resolution / w
+    u2_px = u2_orig * camera_resolution / w
+    u1_px += np.random.normal(0, camera_noise_px, size=u1_px.shape)
+    u2_px += np.random.normal(0, camera_noise_px, size=u2_px.shape)
+    u1 = u1_px * w / camera_resolution
+    u2 = u2_px * w / camera_resolution
+
+    alpha = np.abs(np.arctan(u1 / f) - np.arctan(u2 / f))
+    l = r / np.sin(alpha / 2)
+
+    angle_cam = (np.arctan(u1 / f) + np.arctan(u2 / f)) / 2
+    angle_rel = angle_cam + camera_angle
+    angle_rel = (angle_rel + np.pi) % (2 * np.pi) - np.pi
+
+    l = np.nan_to_num(l, nan=0.0)
+    angle_rel = np.nan_to_num(angle_rel, nan=0.0)
+
+    return l, angle_rel
 
 def sample_camera_measurements(center):
     all_d = []
@@ -531,7 +628,7 @@ def visualize_noise_vs_distance(distances, n_samples=500, figsize=(12, 5)):
     dist_mean = []
     all_all_d = []
     for d in distances:
-        center = np.array([0, d])  # place target at given distance along x-axis
+        center = np.array([d, 0])  # place target at given distance along x-axis
         all_d, all_a = sample_camera_measurements_raw(center)
         all_all_d.append(all_d)
         dist_std.append(np.std(all_d))
@@ -552,6 +649,7 @@ def visualize_noise_vs_distance(distances, n_samples=500, figsize=(12, 5)):
     ax1.set_ylabel("Estimated distance median + 5% quantiles")
     ax1.set_title("Estimated distance noise")
     ax1.grid(True, linestyle="--", alpha=0.5)
+    ax1.set_aspect('equal')
 
     plt.savefig("noise_vs_distance.png", dpi=150, bbox_inches="tight")
     plt.show()
@@ -609,6 +707,42 @@ def test_smooth_angle():
         assert np.allclose(rh, d)
     pass
 
+def test_vectorized_noise():
+    iters = 1000
+    all_rel_pos = np.random.rand(iters, 2)
+    all_rel_pos = (np.random.rand(iters, 1)*5 + 0.0)*all_rel_pos/np.linalg.norm(all_rel_pos, axis=1)[:, np.newaxis]
+    # all_n_cameras = np.random.randint(10, size=(iters))+3
+    all_n_cameras = np.ones((iters))*300
+    all_drone_angle = np.random.rand(iters)*2*np.pi-np.pi
+    all_d = []
+    all_a = []
+    all_gt_d = []
+    all_gt_a = []
+    for i in range(iters):
+        rel_pos = all_rel_pos[i]
+        n_cameras = all_n_cameras[i]
+        drone_angle = all_drone_angle[i]
+        d, a = simulate_camera_measurement(rel_pos,  0.2, 0.035, 3, global_angle=drone_angle, cameras_num=n_cameras)
+        gt_d = np.linalg.norm(rel_pos)
+        gt_a = ((np.arctan2(rel_pos[1], rel_pos[0]) - drone_angle) + np.pi) % (2 * np.pi) - np.pi
+        # assert abs(a - gt_a) < 0.001
+        # assert abs(d - gt_d) < 0.001
+        all_d.append(d)
+        all_a.append(a)
+        all_gt_d.append(gt_d)
+        all_gt_a.append(gt_a)
+        pass
+    all_d = np.array(all_d)
+    all_a = np.array(all_a)
+    all_gt_d = np.array(all_gt_d)
+    all_gt_a = np.array(all_gt_a)
+    vect_d, vect_a = simulate_camera_measurement_vect(all_rel_pos.T, 0.2, 0.035, 3, global_angle=all_drone_angle, cameras_num=all_n_cameras)
+    # assert np.allclose(np.array(all_d), vect_d)
+    # assert np.allclose(np.array(all_a), vect_a)
+
+    pass
+
 if __name__ == "__main__":
-    test_smooth_angle()
+    test_vectorized_noise()
+    # test_smooth_angle()
     # main()
