@@ -108,7 +108,7 @@ def train(cfg:QuadrotorEnvConfig):
 
 def parameter_sweep():
     cfg = QuadrotorEnvConfig()
-    cfg.logdir = "./quad_experiment_long"
+    cfg.logdir = "./quad_experiment2"
     cfg.num_envs = 12
     cfg.rnn_size = 128
     cfg.neighbor_hidden_size = 128
