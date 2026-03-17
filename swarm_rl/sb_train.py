@@ -117,7 +117,7 @@ def parameter_sweep():
     cfg.neighbor_encoder_type = "mlp"
     cfg.rnn_num_layers = 3
     cfg.total_timesteps = 300_000_000
-    cfg.neighbor_obs_type = "dist_angle_heading"
+    cfg.neighbor_obs_type = "dist_sangle_sheading"
     cfg.obs_repr = 'cdist_cdistdot_dist_distdot_sangle_angledot'
     # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nsangle_angledot'
 
