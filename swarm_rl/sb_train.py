@@ -108,7 +108,7 @@ def train(cfg:QuadrotorEnvConfig):
 
 def parameter_sweep():
     cfg = QuadrotorEnvConfig()
-    cfg.logdir = "./quad_experiment2"
+    cfg.logdir = "./quad_experiment_long"
     cfg.num_envs = 12
     cfg.rnn_size = 128
     cfg.neighbor_hidden_size = 128
@@ -116,23 +116,24 @@ def parameter_sweep():
     cfg.rnn_type = "full"
     cfg.neighbor_encoder_type = "mlp"
     cfg.rnn_num_layers = 3
-    cfg.total_timesteps = 30_000_000
+    cfg.total_timesteps = 300_000_000
     cfg.neighbor_obs_type = "dist_angle_heading"
-    cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nsangle_angledot'
+    cfg.obs_repr = 'cdist_cdistdot_dist_distdot_sangle_angledot'
+    # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nsangle_angledot'
 
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
-    for rnn_num_layers in [3]:
+    for rnn_num_layers in [6]:
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
-                for neighbor_obs_type in ["ndist_nsangle"]:
-                    for cam_px_noise in [0.1, 0.01, 0]:
-                        cfg.neighbor_obs_type = neighbor_obs_type
-                        cfg.rnn_size = rnn_size
-                        cfg.rnn_num_layers = rnn_num_layers
-                        cfg.neighbor_encoder_type = neighbor_encoder_type
-                        cfg.pixel_noise_cam = cam_px_noise
-                        train(cfg)
+                # for neighbor_obs_type in ["ndist_nsangle"]:
+                #     for cam_px_noise in [0.1, 0.01, 0]:
+                # cfg.neighbor_obs_type = neighbor_obs_type
+                cfg.rnn_size = rnn_size
+                cfg.rnn_num_layers = rnn_num_layers
+                cfg.neighbor_encoder_type = neighbor_encoder_type
+                # cfg.pixel_noise_cam = cam_px_noise
+                train(cfg)
     # train()
 
 def main():

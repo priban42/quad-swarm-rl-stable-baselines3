@@ -15,8 +15,7 @@ class QuadrotorEnvConfig:
     n_cameras: int = 3
     target_size_cam: float = 0.2
     neighbour_size_cam: float = 0.2
-    pixel_noise_cam: float = 3
-
+    pixel_noise_cam: float = 3.0
 
     # PPO
     n_steps: int = 512
@@ -116,7 +115,7 @@ class QuadrotorEnvConfig:
     use_replay_buffer: bool = False
 
     # Annealing
-    anneal_collision_steps: float = 300_000_000
+    anneal_collision_steps: int = 300_000_000
 
     # Rendering
     quads_view_mode: list = field(default_factory=lambda: ["topdown"])

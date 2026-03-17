@@ -540,7 +540,7 @@ def simulate_camera_measurement(
     angle_cam = (arctan(u1/f) + arctan(u2/f))/2  # angle in the selected camera frame
     angle_rel = angle_cam + camera_angle  # angle in the drone frame
     angle_rel = (angle_rel + np.pi) % (2 * np.pi) - np.pi
-    if np.isnan(l):
+    if abs(l-l_orig) > 0.5:
         l = 0
         angle_rel = 0
     return l, angle_rel
@@ -712,7 +712,7 @@ def test_vectorized_noise():
     all_rel_pos = np.random.rand(iters, 2)
     all_rel_pos = (np.random.rand(iters, 1)*5 + 0.0)*all_rel_pos/np.linalg.norm(all_rel_pos, axis=1)[:, np.newaxis]
     # all_n_cameras = np.random.randint(10, size=(iters))+3
-    all_n_cameras = np.ones((iters))*300
+    all_n_cameras = np.ones((iters))*3
     all_drone_angle = np.random.rand(iters)*2*np.pi-np.pi
     all_d = []
     all_a = []
@@ -722,7 +722,7 @@ def test_vectorized_noise():
         rel_pos = all_rel_pos[i]
         n_cameras = all_n_cameras[i]
         drone_angle = all_drone_angle[i]
-        d, a = simulate_camera_measurement(rel_pos,  0.2, 0.035, 3, global_angle=drone_angle, cameras_num=n_cameras)
+        d, a = simulate_camera_measurement(rel_pos,  0.2, 0.035, 0, global_angle=drone_angle, cameras_num=n_cameras)
         gt_d = np.linalg.norm(rel_pos)
         gt_a = ((np.arctan2(rel_pos[1], rel_pos[0]) - drone_angle) + np.pi) % (2 * np.pi) - np.pi
         # assert abs(a - gt_a) < 0.001
@@ -736,7 +736,7 @@ def test_vectorized_noise():
     all_a = np.array(all_a)
     all_gt_d = np.array(all_gt_d)
     all_gt_a = np.array(all_gt_a)
-    vect_d, vect_a = simulate_camera_measurement_vect(all_rel_pos.T, 0.2, 0.035, 3, global_angle=all_drone_angle, cameras_num=all_n_cameras)
+    vect_d, vect_a = simulate_camera_measurement_vect(all_rel_pos.T, 0.2, 0.035, 0, global_angle=all_drone_angle, cameras_num=all_n_cameras)
     # assert np.allclose(np.array(all_d), vect_d)
     # assert np.allclose(np.array(all_a), vect_a)
 
