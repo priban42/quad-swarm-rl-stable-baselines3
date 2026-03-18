@@ -19,6 +19,7 @@ import multiprocessing as mp
 
 from swarm_rl.models.ActorCriticPolicyCustom import ActorCriticPolicyCustomSeparateWeights
 from swarm_rl.global_cfg import QuadrotorEnvConfig
+from stable_baselines3.common.utils import get_latest_run_id
 
 import torch
 # torch.set_num_threads(1)
@@ -93,16 +94,16 @@ def train(cfg:QuadrotorEnvConfig):
 
     note_callback = TensorboardHParamCallback(hparams_dict=cfg.to_dict(), note=note)
 
+    tb_log_name = f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_{cfg.rnn_num_layers}"
     # 4. Train
     model.learn(
         total_timesteps=cfg.total_timesteps,
         callback=[checkpoint_callback, eval_callback, curriculum_callback, note_callback],
-        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_{cfg.rnn_num_layers}",
+        tb_log_name=tb_log_name,
         # callback=[checkpoint_callback, eval_callback]
     )
-
-    # 5. Save
-    model.save(os.path.join(cfg.logdir, "final_model"))
+    model_name = f"{tb_log_name}_{get_latest_run_id(cfg.logdir+'/tb', tb_log_name)}"
+    model.save(f"{cfg.logdir}/final_models/{model_name}.zip")
     env.close()
     eval_env.close()
 
@@ -116,7 +117,8 @@ def parameter_sweep():
     cfg.rnn_type = "full"
     cfg.neighbor_encoder_type = "mlp"
     cfg.rnn_num_layers = 3
-    cfg.total_timesteps = 300_000_000
+    cfg.total_timesteps = 10_000_000
+    # cfg.total_timesteps = 300
     cfg.neighbor_obs_type = "dist_sangle_sheading"
     cfg.obs_repr = 'cdist_cdistdot_dist_distdot_sangle_angledot'
     # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nsangle_angledot'

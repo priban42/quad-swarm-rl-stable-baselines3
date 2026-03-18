@@ -103,20 +103,20 @@ class QuadrotorEnvMulti(gym.Env):
         self.use_obstacles = cfg.use_obstacles
         self.obstacles = None
         self.num_obstacles = 0
-        if self.use_obstacles:
-            self.prev_obst_quad_collisions = []
-            self.obst_quad_collisions_per_episode = 0
-            self.obst_quad_collisions_after_settle = 0
-            self.curr_quad_col = []
-            self.obst_density = cfg.obst_density
-            self.obst_spawn_area = cfg.obst_spawn_area
-            self.num_obstacles = int(cfg.obst_density * cfg.obst_spawn_area[0] * cfg.obst_spawn_area[1])
-            self.obst_map = None
-            self.obst_size = cfg.obst_size
-
-            # Log more info
-            self.distance_to_goal_3_5 = 0
-            self.distance_to_goal_5 = 0
+        # if self.use_obstacles:
+        #     self.prev_obst_quad_collisions = []
+        #     self.obst_quad_collisions_per_episode = 0
+        #     self.obst_quad_collisions_after_settle = 0
+        #     self.curr_quad_col = []
+        #     self.obst_density = cfg.obst_density
+        #     self.obst_spawn_area = cfg.obst_spawn_area
+        #     self.num_obstacles = int(cfg.obst_density * cfg.obst_spawn_area[0] * cfg.obst_spawn_area[1])
+        #     self.obst_map = None
+        #     self.obst_size = cfg.obst_size
+        #
+        #     # Log more info
+        #     self.distance_to_goal_3_5 = 0
+        #     self.distance_to_goal_5 = 0
 
         # Scenarios
         self.quads_mode = cfg.quads_mode
@@ -547,17 +547,17 @@ class QuadrotorEnvMulti(gym.Env):
             self.obst_size = obst_size
 
         # Scenario reset
-        if self.use_obstacles:
-            self.obstacles = MultiObstacles(obstacle_size=self.obst_size, quad_radius=self.quad_arm)
-            self.obst_map, obst_pos_arr, cell_centers = self.obst_generation_given_density()
-            self.scenario.reset(obst_map=self.obst_map, cell_centers=cell_centers, mode_index=self.rng.integers(0, 100))
-        else:
-            # self.scenario.reset(mode_index=self.rng.integers(0, 100))
-            # if "mode_index" in self.cfg:
-            #     self.scenario.reset(mode_index=self.cfg["mode_index"])
-            # else:
-            #     self.scenario.reset()
-            self.scenario.reset()
+        # if self.use_obstacles:
+        #     self.obstacles = MultiObstacles(obstacle_size=self.obst_size, quad_radius=self.quad_arm)
+        #     self.obst_map, obst_pos_arr, cell_centers = self.obst_generation_given_density()
+        #     self.scenario.reset(obst_map=self.obst_map, cell_centers=cell_centers, mode_index=self.rng.integers(0, 100))
+        # else:
+        #     # self.scenario.reset(mode_index=self.rng.integers(0, 100))
+        #     # if "mode_index" in self.cfg:
+        #     #     self.scenario.reset(mode_index=self.cfg["mode_index"])
+        #     # else:
+        #     #     self.scenario.reset()
+        self.scenario.reset()
 
         # Replay buffer
         if self.use_replay_buffer and not self.activate_replay_buffer:
@@ -986,7 +986,7 @@ class QuadrotorEnvMulti(gym.Env):
                 dones = [True] * len(dones)
                 break
             # return obs, rewards, dones, dones, infos
-            self.obs = obs
+            # self.obs = obs
         if self.num_use_neighbor_obs > 0:
             obs = self.add_neighborhood_obs(obs)
         return obs, rewards, dones, infos  # custom vec env
