@@ -117,7 +117,7 @@ def parameter_sweep():
     cfg.rnn_type = "full"
     cfg.neighbor_encoder_type = "mlp"
     cfg.rnn_num_layers = 3
-    cfg.total_timesteps = 10_000_000
+    cfg.total_timesteps = 30_000_000
     # cfg.total_timesteps = 300
     cfg.neighbor_obs_type = "dist_sangle_sheading"
     cfg.obs_repr = 'cdist_cdistdot_dist_distdot_sangle_angledot'
@@ -128,14 +128,14 @@ def parameter_sweep():
     for rnn_num_layers in [6]:
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
-                # for neighbor_obs_type in ["ndist_nsangle"]:
-                #     for cam_px_noise in [0.1, 0.01, 0]:
-                # cfg.neighbor_obs_type = neighbor_obs_type
-                cfg.rnn_size = rnn_size
-                cfg.rnn_num_layers = rnn_num_layers
-                cfg.neighbor_encoder_type = neighbor_encoder_type
-                # cfg.pixel_noise_cam = cam_px_noise
-                train(cfg)
+                for neighbor_obs_type in ["dist_sangle_sheading", "ndist_nsangle"]:
+                    #     for cam_px_noise in [0.1, 0.01, 0]:
+                    cfg.neighbor_obs_type = neighbor_obs_type
+                    cfg.rnn_size = rnn_size
+                    cfg.rnn_num_layers = rnn_num_layers
+                    cfg.neighbor_encoder_type = neighbor_encoder_type
+                    cfg.pixel_noise_cam = 0
+                    train(cfg)
     # train()
 
 def main():
