@@ -128,7 +128,7 @@ def parameter_sweep():
     for rnn_num_layers in [6]:
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
-                for neighbor_obs_type in ["dist_sangle_sheading", "ndist_nsangle"]:
+                for neighbor_obs_type in ["ndist_nsangle"]:
                     #     for cam_px_noise in [0.1, 0.01, 0]:
                     cfg.neighbor_obs_type = neighbor_obs_type
                     cfg.rnn_size = rnn_size
