@@ -10,6 +10,7 @@ from swarm_rl.models.quad_multi_model import QuadMultiEncoder
 from sample_factory.model.core import ModelCoreIdentity, default_make_core_func, ModelCore
 from sample_factory.model.decoder import MlpDecoder
 from sample_factory.utils.typing import Config
+from sample_factory.model.model_utils import fc_layer, nonlinearity
 
 from dataclasses import dataclass, field
 from typing import List
@@ -265,8 +266,8 @@ class ModelCoreMLP(ModelCore):
         in_size = input_size
         self.in_size = in_size
         for _ in range(cfg.rnn_num_layers):
-            layers.append(nn.Linear(in_size, cfg.rnn_size))
-            layers.append(nn.ReLU())
+            layers.append(fc_layer(in_size, cfg.rnn_size))
+            layers.append(nonlinearity(cfg))
             in_size = cfg.rnn_size
 
         self.core = nn.Sequential(*layers)
