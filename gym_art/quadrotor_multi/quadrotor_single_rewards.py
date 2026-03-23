@@ -153,6 +153,7 @@ class QuadrotorSingle:
             excite: [bool] change the set point at the fixed frequency to perturb the quad
         """
         # Numba Speed Up
+        self.cfg = cfg
         self.use_numba = cfg.use_numba
 
         # Room
@@ -328,10 +329,12 @@ class QuadrotorSingle:
             "omega": [-self.dynamics.omega_max * np.ones(3), self.dynamics.omega_max * np.ones(3)],
             "angle": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "sangle": [-np.ones(2), np.ones(2)],
+            "nsangle": [-np.ones(2), np.ones(2)],
             "aw": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "cdist": [0*np.ones(1), self.room_length*np.ones(1)/2],
             "cdistdot": [-self.dynamics.vxyz_max * np.ones(1), self.dynamics.vxyz_max * np.ones(1)],
             "dist": [-self.room_length*np.ones(1)/2, self.room_length*np.ones(1)/2],
+            "ndist": [-self.room_length*np.ones(1)/2, self.room_length*np.ones(1)/2],
             "distdot": [-self.dynamics.vxyz_max * np.ones(1), self.dynamics.vxyz_max * np.ones(1)],
             "angledot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
             "awdot": [-self.dynamics.omega_max*np.ones(1), self.dynamics.omega_max*np.ones(1)],
@@ -381,6 +384,8 @@ class QuadrotorSingle:
             obs_comps = obs_comps + (['dist'] + ['sangle']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'dist_sangle_sheading' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['dist'] + ['sangle'] + ['sangle']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'ndist_nsangle' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['dist'] + ['sangle']) * self.num_use_neighbor_obs
 
         if self.use_obstacles:
             obs_comps = obs_comps + ["octmap"]

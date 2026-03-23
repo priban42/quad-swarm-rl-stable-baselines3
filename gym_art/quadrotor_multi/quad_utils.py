@@ -32,6 +32,7 @@ QUADS_OBS_REPR = {
     'aw_awdot_dist_distdot_angle_angledot': 6,
     'cdist_cdistdot_dist_distdot_angle_angledot': 6,
     'cdist_cdistdot_dist_distdot_sangle_angledot': 7,
+    'cdist_cdistdot_ndist_distdot_nsangle_angledot': 7,
     'xyz_vxyz_R_omega_floor': 19,
     'xyz_vxyz_R_omega_wall': 24,
 }
@@ -49,6 +50,7 @@ QUADS_NEIGHBOR_OBS_TYPE = {
     'angle':1,
     'dist_angle':2,
     'dist_sangle':3,
+    'ndist_nsangle':3,
     'dist_angle_heading':3,
     'dist_sangle_sheading':5,
 
@@ -266,6 +268,121 @@ def dict_update_existing(dic, dic_upd):
             dict_update_existing(dic[key], dic_upd[key])
         else:
             dic[key] = dic_upd[key]
+
+def rotation_matrix(axis, angle):
+    """
+    Create a 3x3 rotation matrix from an axis and an angle using Rodrigues' formula.
+    """
+    axis = np.asarray(axis, dtype=float)
+    axis = axis / np.linalg.norm(axis)  # normalize axis
+    x, y, z = axis
+
+    c = np.cos(angle)
+    s = np.sin(angle)
+    C = 1 - c
+
+    R = np.array([
+        [c + x * x * C, x * y * C - z * s, x * z * C + y * s],
+        [y * x * C + z * s, c + y * y * C, y * z * C - x * s],
+        [z * x * C - y * s, z * y * C + x * s, c + z * z * C]
+    ])
+    return R
+
+
+
+def circle_intersection_vect(c1: np.ndarray, r1: float, c2: np.ndarray, r2) -> np.ndarray:
+    """
+    Args:
+        c1: (2, N) centers of circle 1
+        r1: radius of circle 1 (scalar)
+        c2: (2, N) centers of circle 2
+        r2: (N,) or scalar radius of circle 2
+
+    Returns:
+        p1, p2: each (2, N)
+    """
+    d = np.linalg.norm(c2 - c1, axis=0)  # (N,)
+    a = (r1 ** 2 - r2 ** 2 + d ** 2) / (2 * d)  # (N,)
+    h = np.sqrt(r1 ** 2 - a ** 2)  # (N,)
+
+    radial = (c2 - c1) / d  # (2, N)
+    mid = c1 + a * radial  # (2, N)
+
+    perp = np.array([-radial[1], radial[0]])  # (2, N)
+
+    p1 = mid + h * perp  # (2, N)
+    p2 = mid - h * perp  # (2, N)
+    return p1, p2
+
+
+def get_camera_angle(rel_angle, n):
+    """
+    Args:
+        rel_angle: the angle of a detected point relative to the drone orientation (-pi, pi)
+        n: number of cameras
+
+    Returns: angle of the best camera
+    """
+    cam_idx = np.round((rel_angle % (2 * np.pi)) / (2 * np.pi / n)).astype(int) % n
+    return cam_idx * 2 * np.pi / n
+
+
+def simulate_camera_measurement_vect(
+        rel_pos: np.ndarray,  # (2, N)
+        known_size_m: float,
+        focal_length_m: float,
+        camera_noise_px: float,
+        global_angle: np.ndarray,
+        fov_deg: float = 70,
+        camera_resolution: float = 640.0,
+        cameras_num: int = 1,
+        min_distance=0.25):
+    # rel_pose = R(-global_angle) @ rel_pos
+    c, s = np.cos(-global_angle), np.sin(-global_angle)  # (2, N)
+    rel_pose = np.array([c * rel_pos[0] - s * rel_pos[1],
+                         s * rel_pos[0] + c * rel_pos[1]])  # (2, N)
+    angle_orig = np.arctan2(rel_pose[1], rel_pose[0])  # (N,)
+    camera_angle = get_camera_angle(angle_orig, cameras_num)  # (N,)
+
+    # rotate each point by its own camera angle
+    c, s = np.cos(-camera_angle), np.sin(-camera_angle)  # (N,)
+    center_2d = np.array([c * rel_pose[0] - s * rel_pose[1],
+                          s * rel_pose[0] + c * rel_pose[1]])  # (2, N)
+
+    r = known_size_m / 2
+    f = focal_length_m
+    w = 2 * np.tan((fov_deg / 2) * np.pi / 180) * f
+
+    x1, x2 = circle_intersection_vect(center_2d, r,
+                                      center_2d / 2,
+                                      np.linalg.norm(center_2d, axis=0) / 2)  # (2, N) each
+
+    u1_orig = x1[1] * f / x1[0]
+    u2_orig = x2[1] * f / x2[0]
+    u1_px = u1_orig * camera_resolution / w
+    u2_px = u2_orig * camera_resolution / w
+    u1_px += np.random.normal(0, camera_noise_px, size=u1_px.shape)
+    u2_px += np.random.normal(0, camera_noise_px, size=u2_px.shape)
+    u1 = u1_px * w / camera_resolution
+    u2 = u2_px * w / camera_resolution
+
+    alpha = np.abs(np.arctan(u1 / f) - np.arctan(u2 / f))
+    l = r / np.sin(alpha / 2)
+
+    angle_cam = (np.arctan(u1 / f) + np.arctan(u2 / f)) / 2
+    angle_rel = angle_cam + camera_angle
+    angle_rel = (angle_rel + np.pi) % (2 * np.pi) - np.pi
+
+    # l = np.nan_to_num(l, nan=0.0)
+    # angle_rel = np.nan_to_num(angle_rel, nan=0.0)
+
+    outlier_mask = abs(np.linalg.norm(rel_pos, axis=0))<min_distance
+    outlier_mask = outlier_mask | np.isnan(l)
+
+    l[outlier_mask] = min_distance
+    angle_rel[outlier_mask] = angle_orig[outlier_mask]
+
+    return l, angle_rel
 
 
 class OUNoise:
