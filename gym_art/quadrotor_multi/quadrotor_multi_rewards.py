@@ -672,6 +672,9 @@ class QuadrotorEnvMulti(gym.Env):
             if self_state_update_flag:
                 obs = [e.state_vector(e) for e in self.envs]
 
+            if self.num_use_neighbor_obs > 0:
+                obs = self.add_neighborhood_obs(obs)
+
             # 6. Update info for replay buffer
             # Once agent learns how to take off, activate the replay buffer
             if self.use_replay_buffer and not self.activate_replay_buffer:
@@ -771,11 +774,11 @@ class QuadrotorEnvMulti(gym.Env):
                 dones = [True] * len(dones)
                 break
             # return obs, rewards, dones, dones, infos
-            # self.obs = obs
+            self.obs = obs
 
         # Concatenate observations of neighbor drones
-        if self.num_use_neighbor_obs > 0:
-            obs = self.add_neighborhood_obs(obs)
+        # if self.num_use_neighbor_obs > 0:
+        #     obs = self.add_neighborhood_obs(obs)
         return obs, rewards, dones, infos  # custom vec env
         # return obs[0], rewards[0], dones[0], infos[0]  # vec env
 
