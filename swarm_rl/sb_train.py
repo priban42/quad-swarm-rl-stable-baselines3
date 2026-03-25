@@ -97,7 +97,7 @@ def train(cfg:QuadrotorEnvConfig):
     model.learn(
         total_timesteps=cfg.total_timesteps,
         callback=[checkpoint_callback, eval_callback, curriculum_callback, note_callback],
-        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_c_{cfg.rnn_num_layers}",
+        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_d_{cfg.rnn_num_layers}",
         # callback=[checkpoint_callback, eval_callback]
     )
 
@@ -118,14 +118,14 @@ def parameter_sweep():
     cfg.rnn_num_layers = 3
     cfg.total_timesteps = 20_000_000
     cfg.neighbor_obs_type = "dist_angle_heading"
-    cfg.obs_repr = 'cdist_cdistdot_dist_distdot_sangle_angledot'
+    cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
     cfg.note = "reverted changes in quadrotor_single"
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
     for rnn_num_layers in [3]:
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
-                for neighbor_obs_type in ["dist_sangle"]:
+                for neighbor_obs_type in ["dist_angle"]:
                     cfg.neighbor_obs_type = neighbor_obs_type
                     cfg.rnn_size = rnn_size
                     cfg.rnn_num_layers = rnn_num_layers
