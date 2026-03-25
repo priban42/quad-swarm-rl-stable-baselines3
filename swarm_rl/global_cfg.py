@@ -11,6 +11,7 @@ class QuadrotorEnvConfig:
     _changes = {}
     #ppo
     # PPO
+    note: str = ""
     n_steps: int = 512
     batch_size: int = 1024
     n_epochs: int = 10
