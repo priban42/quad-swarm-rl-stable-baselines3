@@ -97,7 +97,7 @@ def train(cfg:QuadrotorEnvConfig):
     model.learn(
         total_timesteps=cfg.total_timesteps,
         callback=[checkpoint_callback, eval_callback, curriculum_callback, note_callback],
-        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_e_{cfg.rnn_num_layers}",
+        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_f_{cfg.rnn_num_layers}",
         # callback=[checkpoint_callback, eval_callback]
     )
 
@@ -118,8 +118,8 @@ def parameter_sweep():
     cfg.rnn_num_layers = 3
     cfg.total_timesteps = 20_000_000
     cfg.neighbor_obs_type = "dist_angle_heading"
-    cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
-    cfg.note = "Optimized, ndist nangle implemented, pixel_nois_cam ablation"
+    cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
+    cfg.note = "all target and neighbour measurements noisy ablation"
     cfg.pixel_noise_cam = 0.0
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
@@ -127,7 +127,7 @@ def parameter_sweep():
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
                 for neighbor_obs_type in ["ndist_nangle"]:
-                    for pixel_noise_cam in [3.0, 1.0, 0.3]:
+                    for pixel_noise_cam in [3.0, 6.0]:
                         cfg.pixel_noise_cam = pixel_noise_cam
                         cfg.neighbor_obs_type = neighbor_obs_type
                         cfg.rnn_size = rnn_size
