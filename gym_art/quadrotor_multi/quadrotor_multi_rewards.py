@@ -104,20 +104,6 @@ class QuadrotorEnvMulti(gym.Env):
         self.use_obstacles = cfg.use_obstacles
         self.obstacles = None
         self.num_obstacles = 0
-        if self.use_obstacles:
-            self.prev_obst_quad_collisions = []
-            self.obst_quad_collisions_per_episode = 0
-            self.obst_quad_collisions_after_settle = 0
-            self.curr_quad_col = []
-            self.obst_density = cfg.obst_density
-            self.obst_spawn_area = cfg.obst_spawn_area
-            self.num_obstacles = int(cfg.obst_density * cfg.obst_spawn_area[0] * cfg.obst_spawn_area[1])
-            self.obst_map = None
-            self.obst_size = cfg.obst_size
-
-            # Log more info
-            self.distance_to_goal_3_5 = 0
-            self.distance_to_goal_5 = 0
 
         # Scenarios
         self.quads_mode = cfg.quads_mode
@@ -452,18 +438,7 @@ class QuadrotorEnvMulti(gym.Env):
         if obst_size:
             self.obst_size = obst_size
 
-        # Scenario reset
-        if self.use_obstacles:
-            self.obstacles = MultiObstacles(obstacle_size=self.obst_size, quad_radius=self.quad_arm)
-            self.obst_map, obst_pos_arr, cell_centers = self.obst_generation_given_density()
-            self.scenario.reset(obst_map=self.obst_map, cell_centers=cell_centers, mode_index=self.rng.integers(0, 100))
-        else:
-            # self.scenario.reset(mode_index=self.rng.integers(0, 100))
-            # if "mode_index" in self.cfg:
-            #     self.scenario.reset(mode_index=self.cfg["mode_index"])
-            # else:
-            #     self.scenario.reset()
-            self.scenario.reset()
+        self.scenario.reset()
 
         # Replay buffer
         if self.use_replay_buffer and not self.activate_replay_buffer:
@@ -484,19 +459,9 @@ class QuadrotorEnvMulti(gym.Env):
             obs.append(observation)
             self.pos[i, :] = e.dynamics.pos
 
-
         # Neighbors
         if self.num_use_neighbor_obs > 0:
             obs = self.add_neighborhood_obs(obs)
-
-        # Obstacles
-        if self.use_obstacles:
-            quads_pos = np.array([e.dynamics.pos for e in self.envs])
-            obs = self.obstacles.reset(obs=obs, quads_pos=quads_pos, pos_arr=obst_pos_arr)
-            self.obst_quad_collisions_per_episode = self.obst_quad_collisions_after_settle = 0
-            self.prev_obst_quad_collisions = []
-            self.distance_to_goal_3_5 = 0
-            self.distance_to_goal_5 = 0
 
         # Collision
         # # Collision: Neighbor
@@ -582,34 +547,6 @@ class QuadrotorEnvMulti(gym.Env):
             # # Aux: Neighbor Collisions
             self.prev_drone_collisions = curr_drone_collisions
 
-            # 2) Collisions with obstacles
-            if self.use_obstacles:
-                rew_obst_quad_collisions_raw = np.zeros(self.num_agents)
-                obst_quad_col_matrix, quad_obst_pair = self.obstacles.collision_detection(pos_quads=self.pos)
-                # We assume drone can only collide with one obstacle at the same time.
-                # Given this setting, in theory, the gap between obstacles should >= 0.1 (drone diameter: 0.46*2 = 0.92)
-                self.curr_quad_col = np.setdiff1d(obst_quad_col_matrix, self.prev_obst_quad_collisions)
-                collisions_obst_curr_tick = len(self.curr_quad_col)
-                self.obst_quad_collisions_per_episode += collisions_obst_curr_tick
-
-                if collisions_obst_curr_tick > 0 and self.envs[0].tick >= self.collisions_grace_period_steps:
-                    self.obst_quad_collisions_after_settle += collisions_obst_curr_tick
-                    for qid in self.curr_quad_col:
-                        q_rel_dist = np.linalg.norm(obs[qid][0:3])
-                        if q_rel_dist > 3.5:
-                            self.distance_to_goal_3_5 += 1
-                        if q_rel_dist > 5.0:
-                            self.distance_to_goal_5 += 1
-                        # Used for log agent_success
-                        self.agent_col_obst[qid] = 0
-
-                # # Aux: Obstacle Collisions
-                self.prev_obst_quad_collisions = obst_quad_col_matrix
-
-                if len(obst_quad_col_matrix) > 0:
-                    # We assign penalties to the drones which collide with the obstacles
-                    # And obst_quad_last_step_unique_collisions only include drones' id
-                    rew_obst_quad_collisions_raw[self.curr_quad_col] = -1.0
 
             # 3) Collisions with room
             floor_crash_list, wall_crash_list, ceiling_crash_list = self.calculate_room_collision()
@@ -660,8 +597,7 @@ class QuadrotorEnvMulti(gym.Env):
 
             # 2) With obstacles
             rew_collisions_obst_quad = np.zeros(self.num_agents)
-            if self.use_obstacles:
-                rew_collisions_obst_quad = self.rew_coeff["quadcol_bin_obst"] * rew_obst_quad_collisions_raw
+
 
             # 3) With room
             # # TODO: reward penalty
@@ -688,11 +624,6 @@ class QuadrotorEnvMulti(gym.Env):
                 # infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
                 # infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]
                 # infos[i]["rewards"]["rewraw_quadcol"] = rew_collisions_raw[i]
-
-                if self.use_obstacles:
-                    rewards[i] += rew_collisions_obst_quad[i]
-                    infos[i]["rewards"]["rew_quadcol_obstacle"] = rew_collisions_obst_quad[i]
-                    infos[i]["rewards"]["rewraw_quadcol_obstacle"] = rew_obst_quad_collisions_raw[i]
 
                 # self.distance_to_goal[i].append(-infos[i]["rewards"]["rewraw_pos"])
                 if len(self.distance_to_goal[i]) >= 5 and \
@@ -722,17 +653,6 @@ class QuadrotorEnvMulti(gym.Env):
                         dyn1.vel, dyn1.omega, dyn2.vel, dyn2.omega = perform_collision_between_drones(
                             pos1=dyn1.pos, vel1=dyn1.vel, omega1=dyn1.omega, pos2=dyn2.pos, vel2=dyn2.vel, omega2=dyn2.omega)
 
-                # # 3) Obstacles
-                if self.use_obstacles:
-                    if len(self.curr_quad_col) > 0:
-                        self_state_update_flag = True
-                        for val in self.curr_quad_col:
-                            obstacle_id = quad_obst_pair[int(val)]
-                            obstacle_pos = self.obstacles.pos_arr[int(obstacle_id)]
-                            perform_collision_with_obstacle(drone_dyn=self.envs[int(val)].dynamics,
-                                                            obstacle_pos=obstacle_pos,
-                                                            obstacle_size=self.obst_size)
-
                 # # 4) Room
                 if len(wall_crash_list) > 0 or len(ceiling_crash_list) > 0:
                     self_state_update_flag = True
@@ -760,10 +680,6 @@ class QuadrotorEnvMulti(gym.Env):
             if self.num_use_neighbor_obs > 0:
                 obs = self.add_neighborhood_obs(obs)
 
-            # Concatenate obstacle observations
-            if self.use_obstacles:
-                obs = self.obstacles.step(obs=obs, quads_pos=self.pos)
-
             # 6. Update info for replay buffer
             # Once agent learns how to take off, activate the replay buffer
             if self.use_replay_buffer and not self.activate_replay_buffer:
@@ -773,10 +689,7 @@ class QuadrotorEnvMulti(gym.Env):
             if self.quads_render:
                 # Collisions with room
                 ground_collisions = [1.0 if env.dynamics.on_floor else 0.0 for env in self.envs]
-                if self.use_obstacles:
-                    obst_coll = [1.0 if i < 0 else 0.0 for i in rew_obst_quad_collisions_raw]
-                else:
-                    obst_coll = [0.0 for _ in range(self.num_agents)]
+                obst_coll = [0.0 for _ in range(self.num_agents)]
                 self.all_collisions = {'drone': drone_col_matrix, 'ground': ground_collisions,
                                        'obstacle': obst_coll}
 
@@ -819,23 +732,6 @@ class QuadrotorEnvMulti(gym.Env):
                                 self.distance_to_goal[i, int(-5 * self.control_freq):]),
                         }
 
-                        if self.use_obstacles:
-                            infos[i]['episode_extra_stats']['num_collisions_obst_quad'] = \
-                                self.obst_quad_collisions_per_episode
-                            infos[i]['episode_extra_stats']['num_collisions_obst_quad_after_settle'] = \
-                                self.obst_quad_collisions_after_settle
-                            infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst'] = \
-                                self.obst_quad_collisions_per_episode
-
-                            infos[i]['episode_extra_stats']['num_collisions_obst_quad_3_5'] = \
-                                self.distance_to_goal_3_5
-                            infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst_quad_3_5'] = \
-                                self.distance_to_goal_3_5
-
-                            infos[i]['episode_extra_stats']['num_collisions_obst_quad_5'] = \
-                                self.distance_to_goal_5
-                            infos[i]['episode_extra_stats'][f'{scenario_name}/num_collisions_obst_quad_5'] = \
-                                self.distance_to_goal_5
 
                 if not self.saved_in_replay_buffer:
                     # agent_success_rate: base_success_rate, based on per agent
