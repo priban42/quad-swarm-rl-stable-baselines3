@@ -330,7 +330,7 @@ class QuadrotorSingle:
             "angle": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "sangle": [-np.ones(2), np.ones(2)],
             "nsangle": [-np.ones(2), np.ones(2)],
-            "nangle": [-np.ones(2), np.ones(2)],
+            "nangle": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "aw": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "cdist": [0*np.ones(1), self.room_length*np.ones(1)/2],
             "cdistdot": [-self.dynamics.vxyz_max * np.ones(1), self.dynamics.vxyz_max * np.ones(1)],
@@ -454,7 +454,8 @@ class QuadrotorSingle:
 
         self.tick += 1
         done = self.tick > self.ep_len
-        sv = self.state_vector(self)
+        # sv = self.state_vector(self)
+        sv = None
         self.traj_count += int(done)
 
         # return sv, reward, done, {'rewards': rew_info}

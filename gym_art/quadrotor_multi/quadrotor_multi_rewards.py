@@ -214,17 +214,18 @@ class QuadrotorEnvMulti(gym.Env):
             pos_rel = pos_neighbor - cur_pos
             dist_rel = np.linalg.norm(pos_rel, axis=1)
             ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
-        # if "ndist" in self.envs[i].neighbor_obs_type_set:
-        #     cur_pos = self.pos[i]
-        #     pos_neighbor = np.stack([self.pos[j] for j in indices])
-        #     pos_rel = pos_neighbor - cur_pos
-        #     dist_rel = np.linalg.norm(pos_rel, axis=1)
-        #     angle_world = self.envs[i].pre_controller.angle
-        #     # noisy_dist, noisy_angle = simulate_camera_measurement_vect(pos_rel[:, :2].T, self.cfg.neighbour_size_cam, self.cfg.focal_length_cam, self.cfg.pixel_noise_cam,
-        #     #                                       np.ones(len(indices))*angle_world, cameras_num=np.ones(len(indices))*self.cfg.n_cameras)
-        #     # noisy_dist = np.clip(noisy_dist, 0, 10)
-        #     # ret = np.concatenate((ret, noisy_dist[:, np.newaxis]), axis=1)
-        #     ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
+        if "ndist" in self.envs[i].neighbor_obs_type_set:
+            cur_pos = self.pos[i]
+            pos_neighbor = np.stack([self.pos[j] for j in indices])
+            pos_rel = pos_neighbor - cur_pos
+            # dist_rel = np.linalg.norm(pos_rel, axis=1)
+            angle_world = self.envs[i].pre_controller.angle
+            noisy_dist, noisy_angle = simulate_camera_measurement_vect(pos_rel[:, :2].T, self.cfg.neighbour_size_cam, self.cfg.focal_length_cam, self.cfg.pixel_noise_cam,
+                                                  np.ones(len(indices))*angle_world, cameras_num=np.ones(len(indices))*self.cfg.n_cameras)
+            noisy_dist = np.clip(noisy_dist, 0, 10)
+
+            ret = np.concatenate((ret, noisy_dist[:, np.newaxis]), axis=1)
+            # ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
 
         if "angle" in self.envs[i].neighbor_obs_type_set:
             cur_pos = self.pos[i]
@@ -246,20 +247,20 @@ class QuadrotorEnvMulti(gym.Env):
             rel_angle = target_angle_world - angle_world
             rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
             ret = np.concatenate((ret, np.vstack((np.cos(rel_angle), np.sin(rel_angle))).T), axis=1)
-        # if "nsangle" in self.envs[i].neighbor_obs_type_set:
-        #     cur_pos = self.pos[i]
-        #     pos_neighbor = np.stack([self.pos[j] for j in indices])
-        #     pos_rel = pos_neighbor - cur_pos
-        #     angle_world = self.envs[i].pre_controller.angle
-        #     rel_pos_norm = pos_rel / np.linalg.norm(pos_rel, axis=1)[:, np.newaxis]
-        #     target_angle_world = np.arctan2(rel_pos_norm[:, 1], rel_pos_norm[:, 0])
-        #     rel_angle = target_angle_world - angle_world
-        #     rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
-        #     # if np.any(abs(rel_angle-noisy_angle)>0.000001):
-        #     #     pass
-        #     # if np.
-        #     # ret = np.concatenate((ret, np.vstack((np.cos(noisy_angle), np.sin(noisy_angle))).T), axis=1)
-        #     ret = np.concatenate((ret, np.vstack((np.cos(rel_angle), np.sin(rel_angle))).T), axis=1)
+        if "nangle" in self.envs[i].neighbor_obs_type_set:
+            # cur_pos = self.pos[i]
+            # pos_neighbor = np.stack([self.pos[j] for j in indices])
+            # pos_rel = pos_neighbor - cur_pos
+            # angle_world = self.envs[i].pre_controller.angle
+            # rel_pos_norm = pos_rel / np.linalg.norm(pos_rel, axis=1)[:, np.newaxis]
+            # target_angle_world = np.arctan2(rel_pos_norm[:, 1], rel_pos_norm[:, 0])
+            # rel_angle = target_angle_world - angle_world
+            # rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
+            # if np.any(abs(rel_angle-noisy_angle)>0.000001):
+            #     pass
+            # if np.
+            ret = np.concatenate((ret, noisy_angle[:, np.newaxis]), axis=1)
+            # ret = np.concatenate(rel_angle, axis=1)
         if "heading" in self.envs[i].neighbor_obs_type_set:
             heading = self.heading[i]
             neighbour_heading = self.heading[indices]
@@ -674,11 +675,11 @@ class QuadrotorEnvMulti(gym.Env):
                 self.acc[i, :] = self.envs[i].dynamics.acc
                 self.rot[i, :] = self.envs[i].dynamics.rot
 
-            if self_state_update_flag:
-                obs = [e.state_vector(e) for e in self.envs]
-
-            if self.num_use_neighbor_obs > 0:
-                obs = self.add_neighborhood_obs(obs)
+            # if self_state_update_flag:
+            #     obs = [e.state_vector(e) for e in self.envs]
+            #
+            # if self.num_use_neighbor_obs > 0:
+            #     obs = self.add_neighborhood_obs(obs)
 
             # 6. Update info for replay buffer
             # Once agent learns how to take off, activate the replay buffer
@@ -780,11 +781,11 @@ class QuadrotorEnvMulti(gym.Env):
                 dones = [True] * len(dones)
                 break
             # return obs, rewards, dones, dones, infos
-            self.obs = obs
+            # self.obs = obs
 
-        # Concatenate observations of neighbor drones
-        # if self.num_use_neighbor_obs > 0:
-        #     obs = self.add_neighborhood_obs(obs)
+        obs = [e.state_vector(e) for e in self.envs]
+        if self.num_use_neighbor_obs > 0:
+            obs = self.add_neighborhood_obs(obs)
         return obs, rewards, dones, infos  # custom vec env
         # return obs[0], rewards[0], dones[0], infos[0]  # vec env
 

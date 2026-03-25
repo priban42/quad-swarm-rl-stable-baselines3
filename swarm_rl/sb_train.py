@@ -119,18 +119,21 @@ def parameter_sweep():
     cfg.total_timesteps = 20_000_000
     cfg.neighbor_obs_type = "dist_angle_heading"
     cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
-    cfg.note = "removed obstacles. quadrotor_single_rewards.py are now in final state. quadrotor_multi_rewards.py not optimized"
+    cfg.note = "Optimized, ndist nangle implemented, pixel_nois_cam ablation"
+    cfg.pixel_noise_cam = 0.0
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
     for rnn_num_layers in [3]:
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
-                for neighbor_obs_type in ["dist_angle"]:
-                    cfg.neighbor_obs_type = neighbor_obs_type
-                    cfg.rnn_size = rnn_size
-                    cfg.rnn_num_layers = rnn_num_layers
-                    cfg.neighbor_encoder_type = neighbor_encoder_type
-                    train(cfg)
+                for neighbor_obs_type in ["ndist_nangle"]:
+                    for pixel_noise_cam in [3.0, 1.0, 0.3]:
+                        cfg.pixel_noise_cam = pixel_noise_cam
+                        cfg.neighbor_obs_type = neighbor_obs_type
+                        cfg.rnn_size = rnn_size
+                        cfg.rnn_num_layers = rnn_num_layers
+                        cfg.neighbor_encoder_type = neighbor_encoder_type
+                        train(cfg)
     # train()
 
 def main():
