@@ -331,6 +331,7 @@ class QuadrotorSingle:
             "sangle": [-np.ones(2), np.ones(2)],
             "nsangle": [-np.ones(2), np.ones(2)],
             "nangle": [-np.pi*np.ones(1), np.pi*np.ones(1)],
+            "vel2d": [-np.ones(2)*2, np.ones(2)*2],
             "aw": [-np.pi*np.ones(1), np.pi*np.ones(1)],
             "cdist": [0*np.ones(1), self.room_length*np.ones(1)/2],
             "cdistdot": [-self.dynamics.vxyz_max * np.ones(1), self.dynamics.vxyz_max * np.ones(1)],
@@ -389,6 +390,8 @@ class QuadrotorSingle:
             obs_comps = obs_comps + (['ndist'] + ['nsangle']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'ndist_nangle' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['ndist'] + ['nangle']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'dist_angle_vel2d' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['ndist'] + ['nangle'] + ['vel2d']) * self.num_use_neighbor_obs
 
 
         if self.use_obstacles:

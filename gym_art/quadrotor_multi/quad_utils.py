@@ -55,6 +55,7 @@ QUADS_NEIGHBOR_OBS_TYPE = {
     'ndist_nsangle':3,
     'dist_angle_heading':3,
     'dist_sangle_sheading':5,
+    'dist_angle_vel2d':4,
 
 }
 
@@ -290,6 +291,11 @@ def rotation_matrix(axis, angle):
     ])
     return R
 
+def rotation_matrix_2d(angle_rad):
+    return np.array([
+        [np.cos(angle_rad), -np.sin(angle_rad)],
+        [np.sin(angle_rad),  np.cos(angle_rad)]
+    ])
 
 
 def circle_intersection_vect(c1: np.ndarray, r1: float, c2: np.ndarray, r2) -> np.ndarray:

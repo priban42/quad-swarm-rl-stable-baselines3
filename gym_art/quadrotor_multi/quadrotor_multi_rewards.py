@@ -21,7 +21,7 @@ from gym_art.quadrotor_multi.quadrotor_single_rewards import QuadrotorSingle
 from gym_art.quadrotor_multi.scenarios.mix import create_scenario
 from sample_factory.utils.utils import experiment_dir
 from swarm_rl.global_cfg import QuadrotorEnvConfig
-from gym_art.quadrotor_multi.quad_utils import simulate_camera_measurement_vect, rotation_matrix
+from gym_art.quadrotor_multi.quad_utils import simulate_camera_measurement_vect, rotation_matrix, rotation_matrix_2d
 import pickle
 
 
@@ -261,6 +261,15 @@ class QuadrotorEnvMulti(gym.Env):
             # if np.
             ret = np.concatenate((ret, noisy_angle[:, np.newaxis]), axis=1)
             # ret = np.concatenate(rel_angle, axis=1)
+        if "vel2d" in self.envs[i].neighbor_obs_type_set:
+            cur_vel = self.vel[i]
+            vel_neighbor = np.stack([self.vel[j] for j in indices])
+            vel_rel = vel_neighbor - cur_vel
+            angle_world = self.envs[i].pre_controller.angle
+            R = rotation_matrix_2d(-angle_world)
+            vel_rel_local = R @ vel_rel[:, :2].T
+
+            ret = np.concatenate((ret, vel_rel_local.T), axis=1)
         if "heading" in self.envs[i].neighbor_obs_type_set:
             heading = self.heading[i]
             neighbour_heading = self.heading[indices]
