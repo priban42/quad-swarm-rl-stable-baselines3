@@ -118,8 +118,8 @@ def parameter_sweep():
     cfg.rnn_num_layers = 3
     cfg.total_timesteps = 20_000_000
     cfg.neighbor_obs_type = "dist_angle_heading"
-    # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
-    cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
+    cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
+    # cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
     cfg.note = "all target and neighbour measurements noisy ablation"
     cfg.pixel_noise_cam = 0.0
     args = parse_args_from_cfg(cfg)
@@ -127,8 +127,8 @@ def parameter_sweep():
     for rnn_num_layers in [3]:
         for rnn_size in [128]:
             for neighbor_encoder_type in ["attention"]:
-                # for neighbor_obs_type in ["ndist_nangle"]:
-                for neighbor_obs_type in ["dist_angle_vel2d"]:
+                for neighbor_obs_type in ["ndist_nangle"]:
+                # for neighbor_obs_type in ["dist_angle_vel2d"]:
                     for pixel_noise_cam in [3.0]:
                         cfg.pixel_noise_cam = pixel_noise_cam
                         cfg.neighbor_obs_type = neighbor_obs_type
