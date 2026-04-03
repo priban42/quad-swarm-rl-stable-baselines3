@@ -72,6 +72,7 @@ class QuadNeighborhoodEncoderAttention(QuadNeighborhoodEncoder):
             nonlinearity(cfg),
             fc_layer(neighbor_hidden_size, 1),
         )
+        self.last_attention = None
 
     def forward(self, self_obs, obs, all_neighbor_obs_size, batch_size):
         obs_neighbors = obs[:, self.self_obs_dim:self.self_obs_dim + all_neighbor_obs_size]
@@ -93,6 +94,7 @@ class QuadNeighborhoodEncoderAttention(QuadNeighborhoodEncoder):
         attention_weights = self.attention_mlp(attention_mlp_input).view(batch_size, -1)  # alpha_i in the paper
         attention_weights_softmax = torch.nn.functional.softmax(attention_weights, dim=1)
         attention_weights_softmax = attention_weights_softmax.view(-1, 1)
+        self.last_attention = attention_weights_softmax
 
         final_neighborhood_embedding = attention_weights_softmax * neighbor_values
         final_neighborhood_embedding = final_neighborhood_embedding.view(batch_size, -1, self.neighbor_hidden_size)

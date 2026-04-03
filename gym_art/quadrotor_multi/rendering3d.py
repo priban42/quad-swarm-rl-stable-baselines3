@@ -294,6 +294,8 @@ class Transform(SceneNode):
         self.pyg_grp.set_matrix(t)
         for child in self.children:
             child.set_rgba(rgba[0], rgba[1], rgba[2], rgba[3])
+        self.t = t
+        self.mat_inv = np.linalg.inv(t)
 
     def collide_sphere(self, x, radius):
         xh = [x[0], x[1], x[2], 1]

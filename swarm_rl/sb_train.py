@@ -19,6 +19,11 @@ import multiprocessing as mp
 
 from swarm_rl.models.ActorCriticPolicyCustom import ActorCriticPolicyCustomSeparateWeights
 from swarm_rl.global_cfg import QuadrotorEnvConfig
+from stable_baselines3.common.utils import get_latest_run_id
+from pathlib import Path
+from sb_render import render
+import pickle
+from copy import deepcopy
 
 import torch
 # torch.set_num_threads(1)
@@ -93,18 +98,22 @@ def train(cfg:QuadrotorEnvConfig):
 
     note_callback = TensorboardHParamCallback(hparams_dict=cfg.to_dict(), note=note)
 
+    tb_log_name = f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_{cfg.rnn_num_layers}"
     # 4. Train
     model.learn(
         total_timesteps=cfg.total_timesteps,
         callback=[checkpoint_callback, eval_callback, curriculum_callback, note_callback],
-        tb_log_name=f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_f_{cfg.rnn_num_layers}",
+        tb_log_name=tb_log_name,
         # callback=[checkpoint_callback, eval_callback]
     )
-
-    # 5. Save
-    model.save(os.path.join(cfg.logdir, "final_model"))
+    model_name = f"{tb_log_name}_{get_latest_run_id(cfg.logdir+'/tb', tb_log_name)}"
+    model.save(f"{cfg.logdir}/final_models/{model_name}.zip")
     env.close()
     eval_env.close()
+    with open(f"{cfg.logdir}/final_models/{model_name}.p", "wb") as f:
+        pickle.dump(cfg, f)
+    render(cfg, f"{cfg.logdir}/final_models/{model_name}.zip",
+f"{cfg.logdir}/videos", model_name)
 
 def parameter_sweep():
     cfg = QuadrotorEnvConfig()
@@ -114,28 +123,20 @@ def parameter_sweep():
     cfg.neighbor_hidden_size = 128
     # cfg.use_rnn = True  # use rnn for core. False: core=identity
     cfg.rnn_type = "full"
-    cfg.neighbor_encoder_type = "mlp"
+    cfg.neighbor_encoder_type = "attention"
     cfg.rnn_num_layers = 3
-    cfg.total_timesteps = 20_000_000
-    cfg.neighbor_obs_type = "dist_angle_heading"
+    cfg.total_timesteps = 30_000_000
+    cfg.neighbor_obs_type = "dist_angle"
     cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
     # cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
     cfg.note = "all target and neighbour measurements noisy ablation"
-    cfg.pixel_noise_cam = 0.0
+    cfg.pixel_noise_cam = 3.0
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
-    for rnn_num_layers in [3]:
-        for rnn_size in [128]:
-            for neighbor_encoder_type in ["attention"]:
-                for neighbor_obs_type in ["ndist_nangle"]:
-                # for neighbor_obs_type in ["dist_angle_vel2d"]:
-                    for pixel_noise_cam in [3.0]:
-                        cfg.pixel_noise_cam = pixel_noise_cam
-                        cfg.neighbor_obs_type = neighbor_obs_type
-                        cfg.rnn_size = rnn_size
-                        cfg.rnn_num_layers = rnn_num_layers
-                        cfg.neighbor_encoder_type = neighbor_encoder_type
-                        train(cfg)
+    train(cfg)
+    cfg.neighbor_obs_type = "ndist_nangle"
+    train(cfg)
+
     # train()
 
 def main():

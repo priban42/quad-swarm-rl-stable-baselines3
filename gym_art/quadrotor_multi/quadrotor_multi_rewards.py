@@ -433,10 +433,10 @@ class QuadrotorEnvMulti(gym.Env):
         for i in range(len(self.quads_view_mode)):
             self.scenes.append(Quadrotor3DSceneMulti(
                 models=models,
-                w=600, h=480, resizable=True, viewpoint=self.quads_view_mode[i],
+                w=1200, h=960, resizable=True, viewpoint=self.quads_view_mode[i],
                 room_dims=self.room_dims, num_agents=self.num_agents,
                 render_speed=self.render_speed, formation_size=self.quads_formation_size, obstacles=self.obstacles,
-                vis_vel_arrows=False, vis_acc_arrows=True, viz_traces=25, viz_trace_nth_step=1,
+                vis_vel_arrows=True, vis_acc_arrows=False, viz_traces=25, viz_trace_nth_step=1,
                 num_obstacles=self.num_obstacles, scene_index=i
             ))
 
@@ -894,10 +894,10 @@ class QuadrotorEnvMulti(gym.Env):
             text3 = f"ang:{self.envs[0].pre_controller.angle*180/np.pi:.2f} deg"
             text4 = f"ang_vel:{self.envs[0].pre_controller.angular_velocity*180/np.pi:.2f} deg/s"
             frame = np.ascontiguousarray(frame)
-            cv2.putText(frame, text1, (10, 400), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-            cv2.putText(frame, text2, (10, 420), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-            cv2.putText(frame, text3, (10, 440), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-            cv2.putText(frame, text4, (10, 460), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text1, (10, 400*2), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text2, (10, 420*2), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text3, (10, 440*2), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+            cv2.putText(frame, text4, (10, 460*2), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
             return frame
 
     def __deepcopy__(self, memo):

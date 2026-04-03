@@ -1,5 +1,6 @@
 import copy
 
+import numpy as np
 import pyglet
 
 from gym_art.quadrotor_multi.quad_utils import *
@@ -417,7 +418,7 @@ class Quadrotor3DSceneMulti:
                 # self.shadow_transforms[i].set_transform_nocollide(matrix)
 
                 if self.vis_vel_arrows:
-                    if len(self.vector_array[i]) > 10:
+                    if len(self.vector_array[i]) > 3:
                         self.vector_array[i].pop(0)
 
                     self.vector_array[i].append(dyn.vel)
@@ -425,16 +426,25 @@ class Quadrotor3DSceneMulti:
                     # Get average of the vectors
                     avg_of_vecs = np.mean(self.vector_array[i], axis=0)
 
-                    # Calculate direction
-                    vector_dir = np.diag(np.sign(avg_of_vecs))
 
                     # Calculate magnitude and divide by 3 (for aesthetics)
-                    vector_mag = np.linalg.norm(avg_of_vecs) / 3
+                    vector_mag = np.linalg.norm(avg_of_vecs) * 15
+                    vector_mag_2d = np.linalg.norm(avg_of_vecs[:2])
+                    # Calculate direction
+                    if vector_mag < 0.00001:
+                        vector_dir = np.diag(np.ones(3))
+                        vector_mag = 0.00001
+                    else:
+                        # vector_dir = np.diag(np.sign(avg_of_vecs))
+                        vector_dir = np.array([[0, avg_of_vecs[1]/vector_mag_2d, avg_of_vecs[0]/vector_mag_2d],
+                                               [0, -avg_of_vecs[0]/vector_mag_2d, avg_of_vecs[1]/vector_mag_2d],
+                                               [-1, 0, 0]])
 
-                    s = np.diag([1.0, 1.0, vector_mag, 1.0])
+                    s = np.diag([1.0, vector_mag, vector_mag, 1.0])
 
                     cone_trans = np.eye(4)
-                    cone_trans[:3, 3] = [0.0, 0.0, 0.12 * vector_mag]
+                    # cone_trans[:3, 3] = [0.0, 0.0, 0.12 * vector_mag]
+                    cone_trans[:3, 3] = [0.0, 0.0, 0.0]
 
                     cyl_mat = r3d.trans_and_rot(dyn.pos, vector_dir @ dyn.rot) @ s
 
