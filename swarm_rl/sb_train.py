@@ -21,7 +21,7 @@ from swarm_rl.models.ActorCriticPolicyCustom import ActorCriticPolicyCustomSepar
 from swarm_rl.global_cfg import QuadrotorEnvConfig
 from stable_baselines3.common.utils import get_latest_run_id
 from pathlib import Path
-from sb_render import render
+from swarm_rl.sb_render import render
 import pickle
 from copy import deepcopy
 
@@ -117,7 +117,7 @@ f"{cfg.logdir}/videos", model_name)
 
 def parameter_sweep():
     cfg = QuadrotorEnvConfig()
-    cfg.logdir = "./quad_experiment2"
+    cfg.logdir = "./quad_experiment3"
     cfg.num_envs = 12
     cfg.rnn_size = 128
     cfg.neighbor_hidden_size = 128
