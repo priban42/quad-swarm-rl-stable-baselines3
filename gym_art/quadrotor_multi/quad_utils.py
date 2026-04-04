@@ -31,6 +31,7 @@ QUADS_OBS_REPR = {
     'xyz_vxyz_R_omega': 18,
     'aw_awdot_dist_distdot_angle_angledot': 6,
     'cdist_cdistdot_dist_distdot_angle_angledot': 6,
+    'cdist_dist_angle': 3,
     'cdist_cdistdot_ndist_distdot_nangle_angledot': 6,
     'cdist_cdistdot_dist_distdot_sangle_angledot': 7,
     'cdist_cdistdot_ndist_distdot_nsangle_angledot': 7,

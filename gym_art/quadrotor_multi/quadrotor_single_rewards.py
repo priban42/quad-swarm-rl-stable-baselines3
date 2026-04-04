@@ -380,6 +380,8 @@ class QuadrotorSingle:
             obs_comps = obs_comps + (['rxyz']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'dist_angle' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['dist'] + ['angle']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'angle' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['angle']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'dist_angle_heading' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['dist'] + ['angle'] + ['angle']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'dist_sangle' and self.num_use_neighbor_obs > 0:
