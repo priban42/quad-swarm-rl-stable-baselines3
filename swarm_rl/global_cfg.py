@@ -11,6 +11,7 @@ class QuadrotorEnvConfig:
     _changes = {}
 
 
+    obs_stacking = 2
     note: str = ""
     # Camera
     focal_length_cam: float = 0.035

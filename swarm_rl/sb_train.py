@@ -106,7 +106,7 @@ def train(cfg:QuadrotorEnvConfig):
         tb_log_name=tb_log_name,
         # callback=[checkpoint_callback, eval_callback]
     )
-    model_name = f"{tb_log_name}_{get_latest_run_id(cfg.logdir+'/tb', tb_log_name)}"
+    model_name = Path(model.logger.dir).name
     model.save(f"{cfg.logdir}/final_models/{model_name}.zip")
     env.close()
     eval_env.close()
@@ -125,7 +125,7 @@ def parameter_sweep():
     cfg.rnn_type = "full"
     cfg.neighbor_encoder_type = "attention"
     cfg.rnn_num_layers = 3
-    cfg.total_timesteps = 30_000_000
+    cfg.total_timesteps = 50_000_000
     # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
     cfg.note = "all target and neighbour measurements noisy ablation"
     cfg.pixel_noise_cam = 3.0
