@@ -129,11 +129,11 @@ def parameter_sweep():
     # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
     cfg.note = "all target and neighbour measurements noisy ablation"
     cfg.pixel_noise_cam = 3.0
+    cfg.neighbor_obs_type = "dist_angle"
+    cfg.obs_repr = 'cdist_angle'
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
     # cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
-    cfg.neighbor_obs_type = "dist_angle"
-    cfg.obs_repr = 'cdist_angle'
     train(cfg)
     # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
     # cfg.neighbor_obs_type = "ndist_nangle"
