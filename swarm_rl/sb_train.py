@@ -132,7 +132,7 @@ def parameter_sweep():
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
     # cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
-    cfg.neighbor_obs_type = "angle"
+    cfg.neighbor_obs_type = "dist_angle"
     cfg.obs_repr = 'cdist_dist_angle'
     train(cfg)
     # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
