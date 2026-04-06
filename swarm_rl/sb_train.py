@@ -112,8 +112,8 @@ def train(cfg:QuadrotorEnvConfig):
     eval_env.close()
     with open(f"{cfg.logdir}/final_models/{model_name}.p", "wb") as f:
         pickle.dump(cfg, f)
-    render(cfg, f"{cfg.logdir}/final_models/{model_name}.zip",
-f"{cfg.logdir}/videos", model_name)
+    # render(cfg, f"{cfg.logdir}/final_models/{model_name}.zip",
+# f"{cfg.logdir}/videos", model_name)
 
 def parameter_sweep():
     cfg = QuadrotorEnvConfig()
