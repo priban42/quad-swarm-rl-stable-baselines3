@@ -261,7 +261,7 @@ class QuadrotorSingle:
         self.observation_space = self.make_observation_space()
 
         self._seed()
-        self.pre_controller = Controller()
+        self.pre_controller = Controller(self.cfg)
 
         self.ref = None
         self.response = None

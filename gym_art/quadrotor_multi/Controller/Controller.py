@@ -12,7 +12,7 @@ import numpy as np
 import pickle
 
 class Controller:
-    def __init__(self):
+    def __init__(self, cfg):
 
         self.model = MultirotorModel()
         self.params = self.model.get_params()
@@ -28,6 +28,10 @@ class Controller:
         self.angle = 0
         self.angular_velocity = 0
         self.MAX_ANGULAR_RATE = (np.pi*80/180)  # π/10 per timestep viz  https://arxiv.org/pdf/2010.08193 V. SIMULATION EXPERIMENTS
+        self.cfg = cfg
+        self.vel_action_multiplier = 0
+        if self.cfg.action_space is "angvel_vel":
+            self.vel_action_multiplier = 1
 
     def reset_all_pids(self):
         self.position_controller.initialize_pids()
@@ -85,7 +89,8 @@ class Controller:
         self.angle = (self.angle + np.pi)%(2*np.pi) - np.pi
         dir_vec = np.array([np.cos(self.angle), np.sin(self.angle)])
         # velocity = (command[1] + 1)*0.1
-        velocity = 0.2
+        velocity = self.vel_action_multiplier*(command[1] + 1)*0.1 + (1-self.vel_action_multiplier)*0.2
+        # velocity = 0.2
         position_cmd = Position(position=np.array([0, 0, height]), heading=0.0)
         velocity_hdg_cmd = self.position_controller.get_control_signal(state, position_cmd, dt)
         velocity_hdg_cmd.velocity[:2] = dir_vec*velocity

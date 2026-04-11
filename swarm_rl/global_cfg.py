@@ -11,6 +11,8 @@ class QuadrotorEnvConfig:
     _changes = {}
 
 
+    action_space = "angvel_vel"
+
     obs_stacking = 2
     note: str = ""
     # Camera

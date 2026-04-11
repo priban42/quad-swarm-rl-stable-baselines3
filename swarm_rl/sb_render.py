@@ -10,13 +10,13 @@ from copy import deepcopy
 import os
 import pickle
 
-def parse_attention(attention_softmax):
+def parse_attention(attention_softmax, num_agents=4):
     tensor = attention_softmax.reshape(-1)  # flatten to (12,)
-    matrix = np.zeros((4, 4))
-    for agent in range(4):
-        values = tensor[agent * 3: (agent + 1) * 3]  # 3 values for this agent
+    matrix = np.zeros((num_agents, num_agents))
+    for agent in range(num_agents):
+        values = tensor[agent * (num_agents-1): (agent + 1) * (num_agents-1)]  # 3 values for this agent
         # Fill the row, skipping the diagonal
-        cols = [c for c in range(4) if c != agent]
+        cols = [c for c in range(num_agents) if c != agent]
         matrix[agent, cols] = values
     return matrix
 
@@ -126,7 +126,7 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="viAGENT_COLORSdeo"):
 
         while frame_count < MAX_FRAMES:
             action, _states = model.predict(obs, deterministic=True)
-            attention_matrix = parse_attention(model.policy.actor_encoder.neighbor_encoder.last_attention)
+            attention_matrix = parse_attention(model.policy.actor_encoder.neighbor_encoder.last_attention, cfg.num_agents)
 
             obs, reward, terminated, truncated, info = env.step(action)
             episode_reward += np.array(reward).sum()
@@ -148,7 +148,7 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="viAGENT_COLORSdeo"):
 
 if __name__ == "__main__":
     MODEL_BASE_PATH = "quad_experiment3/final_models"
-    MODEL_NAME = "ppo_128_128_full_3_7"
+    MODEL_NAME = "ppo_128_128_full_3_11"
     VIDEO_DIR = "quad_experiment3/videos"
     VIDEO_NAME = MODEL_NAME
 
