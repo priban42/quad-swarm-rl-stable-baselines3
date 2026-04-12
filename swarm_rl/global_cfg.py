@@ -11,9 +11,9 @@ class QuadrotorEnvConfig:
     _changes = {}
 
 
-    action_space = "angvel_vel"
+    action_space: str = "angvel_vel"
 
-    obs_stacking = 2
+    obs_stacking: int = 1
     note: str = ""
     # Camera
     focal_length_cam: float = 0.035
