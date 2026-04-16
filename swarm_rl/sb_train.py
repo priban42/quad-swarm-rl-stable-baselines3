@@ -118,7 +118,7 @@ def train(cfg:QuadrotorEnvConfig):
 def parameter_sweep():
     cfg = QuadrotorEnvConfig()
     cfg.logdir = "./quad_experiment3"
-    cfg.num_envs = 12
+    cfg.num_envs = 1
     cfg.rnn_size = 128
     cfg.neighbor_hidden_size = 128
     # cfg.use_rnn = True  # use rnn for core. False: core=identity
@@ -131,6 +131,7 @@ def parameter_sweep():
     cfg.pixel_noise_cam = 3.0
     cfg.neighbor_obs_type = "dist_angle"
     cfg.obs_repr = 'cdist_angle'
+    # cfg.obs_stacking = 4
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
     # cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'

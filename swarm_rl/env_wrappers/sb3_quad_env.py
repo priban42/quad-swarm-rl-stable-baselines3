@@ -1,6 +1,11 @@
 import copy
+from typing import Any, SupportsFloat
+
 import torch
 import gymnasium as gym
+from gymnasium.core import ObsType, ActType
+import numpy as np
+
 from gym_art.quadrotor_multi.quadrotor_multi import QuadrotorEnvMulti
 from gym_art.quadrotor_multi.quad_experience_replay import ExperienceReplayWrapper
 from swarm_rl.env_wrappers.reward_shaping import DEFAULT_QUAD_REWARD_SHAPING, QuadsRewardShapingWrapper
@@ -8,6 +13,7 @@ from swarm_rl.env_wrappers.v_value_map import V_ValueMapWrapper
 from swarm_rl.env_wrappers.compatibility import QuadEnvCompatibility
 from swarm_rl.env_wrappers.MetaQuadFactory import MetaQuadFactory
 from swarm_rl.global_cfg import QuadrotorEnvConfig
+
 
 class AnnealSchedule:
     def __init__(self, coeff_name, final_value, anneal_env_steps):
@@ -38,6 +44,7 @@ class SB3QuadrotorEnv(gym.Env):
         rew_coeff = DEFAULT_QUAD_REWARD_SHAPING["quad_rewards"]
 
         env = QuadrotorEnvMulti(cfg=cfg)
+        env = ObsStackingWrapper(env, obs_stacking=cfg.obs_stacking)
 
         # --- 2. Optional wrappers (same as before) ---
         if cfg.use_replay_buffer:
@@ -64,3 +71,29 @@ class SB3QuadrotorEnv(gym.Env):
 
     def close(self):
         return self.env.close()
+
+class ObsStackingWrapper(gym.Wrapper):
+    def __init__(self, env, obs_stacking=1):
+        super().__init__(env)
+        self.obs_buffer = None
+        self.obs_stacking = obs_stacking
+        obs_low = np.tile(env.observation_space.low, obs_stacking)
+        obs_high = np.tile(env.observation_space.high, obs_stacking)
+        self._observation_space = gym.spaces.Box(obs_low, obs_high, dtype=np.float32)
+
+    def step(self, action):
+        obs, reward, terminated, info = self.env.step(action)
+        self.obs_buffer = np.hstack([obs, self.obs_buffer[:, :obs.shape[1]*(self.obs_stacking-1)]])
+        return self.obs_buffer, reward, terminated, info  # vec env
+        # return obs, reward, terminated, info  # vec env
+
+    def render(self):
+        return self.env.render()
+
+    def close(self):
+        return self.env.close()
+
+    def reset(self, seed=None, options=None):
+        obs, info = self.env.reset()
+        self.obs_buffer = np.tile(obs, self.obs_stacking)
+        return self.obs_buffer, info

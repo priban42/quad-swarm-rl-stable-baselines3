@@ -10,8 +10,7 @@ class QuadrotorEnvConfig:
 
     _changes = {}
 
-
-    action_space: str = "angvel_vel"
+    action_space: str = "angvel"
 
     obs_stacking: int = 1
     note: str = ""
