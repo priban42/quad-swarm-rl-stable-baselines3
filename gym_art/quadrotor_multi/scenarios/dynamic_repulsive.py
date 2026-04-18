@@ -27,35 +27,39 @@ class Scenario_dynamic_repulsive(QuadrotorScenario):
     def __init__(self, quads_mode, envs, num_agents, room_dims, rng=None):
         super().__init__(quads_mode, envs, num_agents, room_dims, rng)
         self.rng = rng
-        duration_time = 5.0
         self.v_max = 0.5
         self.dt = 1/200
         self.spawn_points = np.zeros((self.num_agents, 3))
-        self.pos = np.array([0, 0])
         self.arena_size = 5
+        self.center_height = 7.5
+        if self.envs[0].cfg.dim_mode == "3D":
+            self.dimension = 3
+        else:
+            self.dimension = 2
+        self.pos = np.array([0., 0., self.center_height])
 
 
     def update_formation_size(self, new_formation_size):
         pass
 
     def step(self):
-        agent_force = np.zeros(2)
+        agent_force = np.zeros(self.dimension)
         for env in self.envs:
             if hasattr(env.dynamics, "pos"):
-                chaser_pos = env.dynamics.pos[:2]
-                rel_vec = -(chaser_pos - self.pos)
+                chaser_pos = env.dynamics.pos[:self.dimension]
+                rel_vec = -(chaser_pos - self.pos[:self.dimension])
                 d = np.linalg.norm(rel_vec)
                 agent_force += rel_vec/(d*d)
-        d_e = np.linalg.norm(self.pos)
-        arena_force = -self.pos/(d_e*(max(self.arena_size-d_e, 0.1)))
+        d_e = np.linalg.norm(self.pos[:self.dimension])
+        arena_force = -(self.pos-np.array([0, 0, self.center_height]))[:self.dimension]/(d_e*(max(self.arena_size-d_e, 0.1)))
 
         v_vect = (agent_force + arena_force)
         v_scale = np.linalg.norm(v_vect)
         v = (v_vect/v_scale)*min(v_scale, self.v_max)
-        self.pos = self.pos + v*self.dt
-        z = 2
-        z = max(0.25, z)
-        self.formation_center = np.array([self.pos[0], self.pos[1], z])
+        self.pos[:self.dimension] = self.pos[:self.dimension] + v*self.dt
+        # z = 2
+        # z = max(0.25, z)
+        self.formation_center = np.array([self.pos[0], self.pos[1], self.pos[2]])
         self.goals = self.generate_goals(num_agents=self.num_agents, formation_center=self.formation_center,
                                          layer_dist=0.0)
         for i, env in enumerate(self.envs):
@@ -64,21 +68,19 @@ class Scenario_dynamic_repulsive(QuadrotorScenario):
         return
 
     def reset(self):
-        # Update duration time
-        # duration_time = np.random.uniform(low=4.0, high=6.0)
-        duration_time = self.rng.uniform(low=4.0, high=6.0)
 
-        self.control_step_for_sec = int(duration_time * self.envs[0].control_freq)
-
-        # Reset formation, and parameters related to the formation; formation center; goals
         self.standard_reset()
-        spawn_points = self.rng.random((self.num_agents, 2))-0.5
+        spawn_points = np.zeros((self.num_agents, 3), dtype=np.float64)
+        spawn_points[:self.num_agents, :self.dimension] = self.rng.random((self.num_agents, self.dimension))-0.5
         spawn_points = (spawn_points.T/np.linalg.norm(spawn_points, axis=1)).T
         spawn_points *= self.rng.random(1)*0.5
-        spawn_points = np.hstack([spawn_points, np.ones((self.num_agents, 1))*2])
+        spawn_points[:, 2] += self.center_height
+        # spawn_points = np.hstack([spawn_points, np.ones((self.num_agents, 1))*2])
         self.spawn_points = spawn_points
-        self.pos[:2] = self.rng.random(2) - 0.5
-        self.pos[:2] = (self.pos[:2]/np.linalg.norm(self.pos[:2]))*(self.rng.random(1)*3 + 2)
+        self.pos[2] = 0
+        self.pos[:self.dimension] = self.rng.random(self.dimension) - 0.5
+        self.pos[:self.dimension] = (self.pos[:self.dimension]/np.linalg.norm(self.pos[:self.dimension]))*(self.rng.random(1)*3 + 2)
+        self.pos[2] += self.center_height
         self.step()
 
     @staticmethod

@@ -37,7 +37,8 @@ class TopDownCamera(object):
         self.center = np.array([0., 0., 15.])
 
     def reset(self, view_dist=2.0, center=np.array([0., 0., 5.])):
-        self.center = np.array([0., 0., 15.])
+        pass
+        # self.center = np.array([0., 0., 15.])
         #self.center = center
 
     def step(self, center=np.array([0., 0., 2.])):
@@ -158,6 +159,7 @@ class Quadrotor3DSceneMulti:
             self.chase_cam = GlobalCamera(view_dist=2.5)
         elif self.viewpoint == 'topdown':
             self.chase_cam = TopDownCamera(view_dist=2.5)
+            self.chase_cam.center = np.array([0., 0., self.room_dims[2]*1.25])
         elif self.viewpoint == 'topdownfollow':
             self.chase_cam = TopDownFollowCamera(view_dist=2.5)
         elif self.viewpoint[:-1] == 'corner':

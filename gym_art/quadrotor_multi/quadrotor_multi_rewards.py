@@ -592,7 +592,7 @@ class QuadrotorEnvMulti(gym.Env):
             w_helper = 100
             existence = -0.1
             rew_formation_score = -wq*np.ones(self.num_agents)*calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
-            rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :2], axis=1)
+            rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :3], axis=1)
             rew_proximity_custom = -wd*rel_distances
             rew_captor = np.zeros(self.num_agents)
             rew_helper = np.zeros(self.num_agents)

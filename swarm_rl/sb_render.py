@@ -9,6 +9,8 @@ from pathlib import Path
 from copy import deepcopy
 import os
 import pickle
+from dataclasses import dataclass, field
+
 
 def parse_attention(attention_softmax, num_agents=4):
     tensor = attention_softmax.reshape(-1)  # flatten to (12,)
@@ -91,7 +93,7 @@ def render_attention_matrix(matrix, img_width=640, img_height=480):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
-def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="viAGENT_COLORSdeo"):
+def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
     cfg = deepcopy(cfg_)
     NUM_EPISODES = 5
     MAX_FRAMES = 600  # maximum frames per episode
@@ -101,6 +103,9 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="viAGENT_COLORSdeo"):
     cfg.quads_render = True
     cfg.initial_capture_radius = 0.2
     cfg.episode_duration = 60.0
+    if cfg.dim_mode == "3D":
+        cfg.quads_view_mode = ["corner0"]
+
 
     env = SB3QuadrotorEnv(cfg)
 
@@ -148,7 +153,7 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="viAGENT_COLORSdeo"):
 
 if __name__ == "__main__":
     MODEL_BASE_PATH = "quad_experiment3/final_models"
-    MODEL_NAME = "ppo_128_128_full_3_18"
+    MODEL_NAME = "ppo_128_128_full_3_46"
     VIDEO_DIR = "quad_experiment3/videos"
     VIDEO_NAME = MODEL_NAME
 

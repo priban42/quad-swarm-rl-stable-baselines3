@@ -445,12 +445,10 @@ class QuadrotorSingle:
         motors_rpm = min_rpm + self.dynamics.thrust_cmds_damp * (max_rpm - min_rpm)
         current_state = State(self.dynamics.pos, self.dynamics.vel, v_prev, self.dynamics.rot, self.dynamics.omega, motors_rpm)
         if self.ref is None:
-            # pca = self.pre_controller.update_vel(current_state, action, self.dt)
-
-            # pca = self.pre_controller.update_vel_height(current_state, action, self.goal[2], self.dt)
-            pca = self.pre_controller.update_vel_height_dir(current_state, action, self.goal[2], self.dt)
-            # pca = self.pre_controller.update_vel_height(current_state, np.clip((self.goal[:2] - self.dynamics.pos[:2])*1, -1, 1), self.goal[2], self.dt)
-            # pca = self.pre_controller.update_pos(current_state, self.goal, self.dt)
+            if self.dim_mode == "3D":
+                pca = self.pre_controller.update_vel_height_dir_3D(current_state, action, self.dt)
+            else:
+                pca = self.pre_controller.update_vel_height_dir(current_state, action, self.goal[2], self.dt)
         else:
             pca = self.pre_controller.test_step_response(current_state, self.dt, ref=self.ref,file_name="vel_response.p")
             self.response = current_state
@@ -522,8 +520,8 @@ class QuadrotorSingle:
             x, y = self.goal[0], self.goal[1]
         elif self.dim_mode == '2D':
             y = self.goal[1]
-        elif self.dim_mode == '2D_horizontal':
-            z = self.goal[2]
+        # elif self.dim_mode == '2D_horizontal':
+        #     z = self.goal[2]
         # Since being near the groud means crash we have to start above
         if z < 0.75:
             z = 0.75

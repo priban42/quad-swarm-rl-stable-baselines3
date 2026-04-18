@@ -26,7 +26,11 @@ class Controller:
         self.num_steps = 0
         self.log_dict = {"state":[], "ref":[], "ctrl":[]}
         self.angle = 0
+        self.angle_h = 0
+        self.angle_v = 0
         self.angular_velocity = 0
+        self.angular_velocity_h = 0
+        self.angular_velocity_v = 0
         self.MAX_ANGULAR_RATE = (np.pi*80/180)  # π/10 per timestep viz  https://arxiv.org/pdf/2010.08193 V. SIMULATION EXPERIMENTS
         self.cfg = cfg
         self.vel_action_multiplier = 0
@@ -105,6 +109,33 @@ class Controller:
         actuators_cmd = self.mixer.get_control_signal(control_group_cmd)
         # if np.isnan(actuators_cmd.motors[0]):
         #     pass
+        return actuators_cmd.motors
+
+    def update_vel_height_dir_3D(self, state, command, dt):
+        '''
+        inspired by https://arxiv.org/pdf/2304.03443
+        command = [angular_velocity_horizontal, angular_velocity_vertical]
+        '''
+        self.angular_velocity_h = command[0]
+        self.angular_velocity_v = command[1]
+        self.angle_h = (self.angle_h + self.angular_velocity*dt*self.MAX_ANGULAR_RATE)
+        self.angle_h = (self.angle_h + np.pi)%(2*np.pi) - np.pi
+        self.angle_v = (self.angle + self.angular_velocity*dt*self.MAX_ANGULAR_RATE)
+        self.angle_v = (self.angle + np.pi)%(2*np.pi) - np.pi
+        dir_vec = np.array([np.cos(self.angle_h), np.sin(self.angle_h), np.sin(self.angle_v)])
+        dir_vec = dir_vec/np.linalg.norm(dir_vec)
+
+        velocity = 0.2
+        position_cmd = Position(position=np.array([0, 0, 0]), heading=0.0)
+        velocity_hdg_cmd = self.position_controller.get_control_signal(state, position_cmd, dt)
+        velocity_hdg_cmd.velocity[:3] = dir_vec*velocity
+
+        acceleration_hdg_cmd = self.velocity_controller.get_control_signal(state, velocity_hdg_cmd, dt)
+        attitude_cmd = self.acceleration_controller.get_control_signal(state, acceleration_hdg_cmd, dt)
+        attitude_rate_cmd = self.attitude_controller.get_control_signal(state, attitude_cmd, dt)
+        control_group_cmd = self.rate_controller.get_control_signal(state, attitude_rate_cmd, dt)
+        actuators_cmd = self.mixer.get_control_signal(control_group_cmd)
+
         return actuators_cmd.motors
 
 

@@ -113,7 +113,7 @@ class QuadrotorEnvConfig:
     quads_mode: str = 'dynamic_repulsive'
 
     # Room
-    room_dims: list = field(default_factory=lambda: [15, 15, 3])
+    room_dims: list = field(default_factory=lambda: [15, 15, 15])
 
     # Replay Buffer
     replay_buffer_sample_prob: float = 0.75
