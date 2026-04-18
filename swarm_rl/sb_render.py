@@ -148,7 +148,7 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="viAGENT_COLORSdeo"):
 
 if __name__ == "__main__":
     MODEL_BASE_PATH = "quad_experiment3/final_models"
-    MODEL_NAME = "ppo_128_128_full_3_11"
+    MODEL_NAME = "ppo_128_128_full_3_18"
     VIDEO_DIR = "quad_experiment3/videos"
     VIDEO_NAME = MODEL_NAME
 

@@ -290,23 +290,36 @@ class QuadrotorSingle:
                                           use_numba=self.use_numba, dt=self.dt, rng=self.rng)
 
         # CONTROL
-        if self.raw_control:
-            if self.dim_mode == '1D':  # Z axis only
-                self.controller = VerticalControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
-            elif self.dim_mode == '2D':  # X and Z axes only
-                self.controller = VertPlaneControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
-            elif self.dim_mode == '3D':
-                self.controller = RawControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
-            elif self.dim_mode == '2D_horizontal':
-                self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
-            else:
-                raise ValueError('QuadEnv: Unknown dimensionality mode %s' % self.dim_mode)
-        else:
-            self.controller = NonlinearPositionController(self.dynamics, tf_control=self.tf_control)
+        # if self.raw_control:
+        #     if self.dim_mode == '1D':  # Z axis only
+        #         self.controller = VerticalControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+        #     elif self.dim_mode == '2D':  # X and Z axes only
+        #         self.controller = VertPlaneControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+        #     elif self.dim_mode == '3D':
+        #         # self.controller = RawControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+        #         self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle, action_space_size=2)
+        #     elif self.dim_mode == '2D_horizontal':
+        #         if self.action_space == "angvel_vel":
+        #             self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle,
+        #                                                action_space_size=2)
+        #         else:
+        #             self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+        #     else:
+        #         raise ValueError('QuadEnv: Unknown dimensionality mode %s' % self.dim_mode)
+        # else:
+        #     self.controller = NonlinearPositionController(self.dynamics, tf_control=self.tf_control)
 
         # ACTIONS
-        # self.action_space = self.controller.action_space(self.dynamics)
-        self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+        if self.dim_mode == '3D':
+            # self.controller = RawControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+            self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle, action_space_size=2)
+        elif self.dim_mode == '2D_horizontal':
+            if self.action_space == "angvel_vel":
+                self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle,
+                                                   action_space_size=2)
+            else:
+                self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
+        # self.controller = CustomPidControl(self.dynamics, zero_action_middle=self.raw_control_zero_middle)
         self.action_space = self.controller.action_space(self.dynamics)
 
         # self.action_space = spaces.Box(-np.ones(2), np.ones(2), dtype=np.float32)
