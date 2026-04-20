@@ -104,7 +104,7 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
     cfg.initial_capture_radius = 0.2
     cfg.episode_duration = 60.0
     if cfg.dim_mode == "3D":
-        cfg.quads_view_mode = ["corner0"]
+        cfg.quads_view_mode = ["corner4"]
 
 
     env = SB3QuadrotorEnv(cfg)
@@ -153,7 +153,7 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
 
 if __name__ == "__main__":
     MODEL_BASE_PATH = "quad_experiment3/final_models"
-    MODEL_NAME = "ppo_128_128_full_3_46"
+    MODEL_NAME = "ppo_128_128_full_3_47"
     VIDEO_DIR = "quad_experiment3/videos"
     VIDEO_NAME = MODEL_NAME
 

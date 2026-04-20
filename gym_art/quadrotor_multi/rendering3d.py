@@ -289,6 +289,8 @@ class Transform(SceneNode):
 
     def set_transform_nocollide(self, t):
         self.pyg_grp.set_matrix(t)
+        self.t = t
+        self.mat_inv = np.linalg.inv(t)
 
     def set_transform_and_color(self, t, rgba):
         self.pyg_grp.set_matrix(t)

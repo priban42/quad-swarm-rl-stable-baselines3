@@ -60,25 +60,28 @@ class CornerCamera(object):
         self.corner_index = corner_index
         self.room_dims = room_dims
         if corner_index == 0:
-            self.center = np.array([-self.room_dims[0] / 2, -self.room_dims[1] / 2, self.room_dims[2]])
+            self.center = np.array([-self.room_dims[0]*0.5*2, -self.room_dims[1]*0.5*2, self.room_dims[2]*0.75])
         elif corner_index == 1:
             self.center = np.array([self.room_dims[0] / 2, -self.room_dims[1] / 2, self.room_dims[2]])
         elif corner_index == 2:
             self.center = np.array([-self.room_dims[0] / 2, self.room_dims[1] / 2, self.room_dims[2]])
         elif corner_index == 3:
             self.center = np.array([self.room_dims[0] / 2, self.room_dims[1] / 2, self.room_dims[2]])
+        elif corner_index == 4:
+            self.center = np.array([0, -self.room_dims[1]*0.5*0.8, self.room_dims[2]*1.4])
 
     def reset(self, view_dist=4.0, center=None):
-        if center is not None:
-            self.center = center
-        elif self.corner_index == 0:
-            self.center = np.array([-self.room_dims[0] / 2, -self.room_dims[1] / 2, self.room_dims[2]])
-        elif self.corner_index == 1:
-            self.center = np.array([self.room_dims[0] / 2, -self.room_dims[1] / 2, self.room_dims[2]])
-        elif self.corner_index == 2:
-            self.center = np.array([-self.room_dims[0] / 2, self.room_dims[1] / 2, self.room_dims[2]])
-        elif self.corner_index == 3:
-            self.center = np.array([self.room_dims[0] / 2, self.room_dims[1] / 2, self.room_dims[2]])
+        pass
+        # if center is not None:
+        #     self.center = center
+        # elif self.corner_index == 0:
+        #     self.center = np.array([-self.room_dims[0] / 2, -self.room_dims[1] / 2, self.room_dims[2]])
+        # elif self.corner_index == 1:
+        #     self.center = np.array([self.room_dims[0] / 2, -self.room_dims[1] / 2, self.room_dims[2]])
+        # elif self.corner_index == 2:
+        #     self.center = np.array([-self.room_dims[0] / 2, self.room_dims[1] / 2, self.room_dims[2]])
+        # elif self.corner_index == 3:
+        #     self.center = np.array([self.room_dims[0] / 2, self.room_dims[1] / 2, self.room_dims[2]])
 
     def step(self, center=np.array([0., 0., 2.])):
         pass
@@ -86,7 +89,7 @@ class CornerCamera(object):
     def look_at(self):
         up = npa(0, 0, 1)
         eye = self.center  # pattern center
-        center = self.center - np.array([0, 0, 2])
+        center = self.center - np.array([0., 0., self.room_dims[2]*0.5])
         center = (center/np.linalg.norm(center)) * self.radius
         return eye, center, up
 
@@ -164,7 +167,7 @@ class Quadrotor3DSceneMulti:
             self.chase_cam = TopDownFollowCamera(view_dist=2.5)
         elif self.viewpoint[:-1] == 'corner':
             self.chase_cam = CornerCamera(view_dist=4.0, room_dims=self.room_dims, corner_index=int(self.viewpoint[-1]))
-
+            pass
         self.fpv_lookat = None
 
         self.scene = None
@@ -223,7 +226,8 @@ class Quadrotor3DSceneMulti:
         self.obstacle_transforms, self.vec_cyl_transforms, self.vec_cone_transforms = [], [], []
         self.path_transforms = [[] for _ in range(self.num_agents)]
 
-        shadow_circle = r3d.circle(0.75 * self.diameter, 32)
+        # shadow_circle = r3d.circle(0.75 * self.diameter, 32)
+        shadow_circle = r3d.circle(0.15, 32)
         collision_sphere = r3d.sphere(0.75 * self.diameter, 32)
 
         arrow_cylinder = r3d.cylinder(0.005, 0.12, 16)
@@ -238,7 +242,7 @@ class Quadrotor3DSceneMulti:
             self.quad_transforms.append(quad_transform)
 
             self.shadow_transforms.append(
-                r3d.transform_and_color(np.eye(4), (0, 0, 0, 0.0), shadow_circle)
+                r3d.transform_and_color(np.eye(4), (QUAD_COLOR[i][0]*0.8, QUAD_COLOR[i][1]*0.8, QUAD_COLOR[i][2]*0.8, 0.8), shadow_circle)
             )
             self.collision_transforms.append(
                 r3d.transform_and_color(np.eye(4), (0, 0, 0, 0.0), collision_sphere)
@@ -414,10 +418,10 @@ class Quadrotor3DSceneMulti:
                         transformation = self.path_store[i][k] @ r3d.scale(scale)
                         self.path_transforms[i][k].set_transform_and_color(transformation, color_rgba)
 
-                # shadow_pos = 0 + dyn.pos
-                # shadow_pos[2] = 0.001  # avoid z-fighting
-                # matrix = r3d.translate(shadow_pos)
-                # self.shadow_transforms[i].set_transform_nocollide(matrix)
+                shadow_pos = 0 + dyn.pos
+                shadow_pos[2] = 0.001  # avoid z-fighting
+                matrix = r3d.translate(shadow_pos)
+                self.shadow_transforms[i].set_transform_nocollide(matrix)
 
                 if self.vis_vel_arrows:
                     if len(self.vector_array[i]) > 3:
