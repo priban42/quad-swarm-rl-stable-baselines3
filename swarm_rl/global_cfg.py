@@ -11,6 +11,8 @@ class QuadrotorEnvConfig:
     _changes = {}
 
     # "angvel", "angvel_vel"
+    dist_reward: float = 0
+
     action_space: str = "angvel"
 
     obs_stacking: int = 1

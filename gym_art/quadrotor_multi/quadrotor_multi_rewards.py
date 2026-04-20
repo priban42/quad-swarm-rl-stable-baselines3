@@ -586,7 +586,7 @@ class QuadrotorEnvMulti(gym.Env):
             # wq = 0.1
             wq = 0
             # wd = 0.002
-            wd = 0
+            wd = self.cfg.dist_reward
             w_captor = 100
             w_helper = 10
             w_helper = 100
