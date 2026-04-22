@@ -11,7 +11,7 @@ class QuadrotorEnvConfig:
     _changes = {}
 
     # "angvel", "angvel_vel"
-    dist_reward: float = 0
+    dist_reward: float = 0.0
 
     action_space: str = "angvel"
 

@@ -125,12 +125,12 @@ def parameter_sweep():
     cfg.rnn_type = "full"
     cfg.neighbor_encoder_type = "attention"
     cfg.rnn_num_layers = 3
-    cfg.total_timesteps = 50_000_00
+    cfg.total_timesteps = 50_000_000
     # cfg.obs_repr = 'cdist_cdistdot_ndist_distdot_nangle_angledot'
     cfg.note = ""
     cfg.pixel_noise_cam = 3.0
     cfg.neighbor_obs_type = "dist_angle"
-    cfg.obs_repr = 'cdist_angle'
+    cfg.obs_repr = 'cdist_dist_angle'
     # cfg.dim_mode = "3D"
     # cfg.obs_stacking = 4
     args = parse_args_from_cfg(cfg)
