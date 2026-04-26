@@ -10,7 +10,7 @@ from copy import deepcopy
 import os
 import pickle
 from dataclasses import dataclass, field
-from analytic_models import Janosov
+from swarm_rl.analytic_models import Janosov
 
 
 def parse_attention(model, num_agents=4):
