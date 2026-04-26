@@ -10,9 +10,13 @@ from copy import deepcopy
 import os
 import pickle
 from dataclasses import dataclass, field
+from analytic_models import Janosov
 
 
-def parse_attention(attention_softmax, num_agents=4):
+def parse_attention(model, num_agents=4):
+    if not isinstance(model, SB3QuadrotorEnv):
+        return np.zeros([num_agents, num_agents])
+    attention_softmax = model.policy.actor_encoder.neighbor_encoder.last_attention
     tensor = attention_softmax.reshape(-1)  # flatten to (12,)
     matrix = np.zeros((num_agents, num_agents))
     for agent in range(num_agents):
@@ -93,6 +97,14 @@ def render_attention_matrix(matrix, img_width=640, img_height=480):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
+def load_model_env(cfg, MODEL_PATH=None, model_type=None):
+    env = SB3QuadrotorEnv(cfg)
+    if model_type == "Jasonov":
+        model = Janosov(cfg)
+    else:
+        model = PPO.load(MODEL_PATH, env=env, device="cpu")
+    return env, model
+
 def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
     cfg = deepcopy(cfg_)
     NUM_EPISODES = 5
@@ -105,11 +117,9 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
     cfg.episode_duration = 60.0
     if cfg.dim_mode == "3D":
         cfg.quads_view_mode = ["corner4"]
-
-
-    env = SB3QuadrotorEnv(cfg)
-
-    model = PPO.load(MODEL_PATH, env=env, device="cpu")
+    env, model = load_model_env(cfg, MODEL_PATH, model_type=cfg.model_type)
+    # env = SB3QuadrotorEnv(cfg)
+    # model = PPO.load(MODEL_PATH, env=env, device="cpu")
 
     obs, info = env.reset()
     frame = env.render()
@@ -131,7 +141,7 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
 
         while frame_count < MAX_FRAMES:
             action, _states = model.predict(obs, deterministic=True)
-            attention_matrix = parse_attention(model.policy.actor_encoder.neighbor_encoder.last_attention, cfg.num_agents)
+            attention_matrix = parse_attention(model, cfg.num_agents)
 
             obs, reward, terminated, truncated, info = env.step(action)
             episode_reward += np.array(reward).sum()
@@ -156,7 +166,14 @@ if __name__ == "__main__":
     MODEL_NAME = "ppo_128_128_full_3_50"
     VIDEO_DIR = "quad_experiment3/videos"
     VIDEO_NAME = MODEL_NAME
+    MODEL_PATH = Path(MODEL_BASE_PATH) / f"{MODEL_NAME}.zip"
 
     with open(Path(MODEL_BASE_PATH)/f"{MODEL_NAME}.p", "rb") as f:
         cfg = pickle.load(f)
-    render(cfg, MODEL_PATH=Path(MODEL_BASE_PATH)/f"{MODEL_NAME}.zip", VIDEO_DIR=VIDEO_DIR, VIDEO_NAME=VIDEO_NAME)
+    env, model = load_model_env(cfg, MODEL_PATH)
+    cfg.model_type = None
+    cfg.model_type = "Jasonov"
+    if cfg.model_type is not None:
+        VIDEO_NAME = cfg.model_type
+    # env, model = load_model_env(cfg, MODEL_PATH, "Jasonov")
+    render(cfg, MODEL_PATH=MODEL_PATH, VIDEO_DIR=VIDEO_DIR, VIDEO_NAME=VIDEO_NAME)
