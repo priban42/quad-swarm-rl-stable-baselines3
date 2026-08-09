@@ -23,9 +23,9 @@ class Janosov:
         self.cfg = cfg
         self.dt = 1/25
         self.Cf = 0
-        self.Cinter = 0.5
+        self.Cinter = 0.55
         self.v_max = 0.4
-        self.r_inter = 1
+        self.r_inter = 3
 
     def predict(self, obs, deterministic=True):
         angle = obs[:, 2]
@@ -49,12 +49,14 @@ class Angelani:
         self.cfg = cfg
         self.dt = 1/25
         self.v_max = 0.4
-        self.beta = -1
+        self.beta = -1  # (tuneable)
         self.Rn = 0
-        self.re = 10.0  # radius of repulsive sphere
-        self.gamma = 1
-        self.sigma = 1
-        self.r_f = 0.5
+        self.re = 10.0  # (tuneable) radius of repulsive sphere
+        self.gamma = 1  # (tuneable)
+        self.sigma = 1  # (tuneable)
+        self.r_f = 0.5  # (tuneable)
+        self.p = 10
+
     def f(self, r):
         # r... shape: (2, num_agents, num_agents-1)
         # ret ... shape: (2, num_agents)
@@ -63,6 +65,21 @@ class Angelani:
         scalar = 1.0 / (1.0 + np.exp((r_mag - self.r_f) / self.sigma))
         f_pairs = r_hat * scalar
         return f_pairs.sum(axis=-1)
+
+    def set(self, x):
+        self.beta = x[0]
+        self.re = x[1]
+        self.gamma = x[2]
+        self.sigma = x[3]
+        self.r_f = x[4]
+        self.p = x[5]
+
+    def get(self):
+        x = np.array([self.beta, self.re, self.gamma, self.sigma, self.r_f, self.p])
+        return x
+
+    def __repr__(self):
+        return(f"{self.beta=}, {self.re=}, {self.gamma=}, {self.sigma=}, {self.r_f=}, {self.p=}")
 
     def predict(self, obs, deterministic=True):
         angle = obs[:, 2]
@@ -76,7 +93,7 @@ class Angelani:
         f_attr = r_rel_norm
 
         v_final = f_rep*self.beta + f_attr*self.gamma
-        ang_vel = np.arctan2(v_final[1, :], v_final[0, :])*10
+        ang_vel = np.arctan2(v_final[1, :], v_final[0, :])*self.p
         ang_vel = np.clip(ang_vel, -np.pi, np.pi)/np.pi
         action = ang_vel[:, np.newaxis]
         return action, None

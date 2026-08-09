@@ -193,6 +193,8 @@ class QuadrotorEnvMulti(gym.Env):
             self.capture_radius = self.cfg.initial_capture_radius
         else:
             self.capture_radius = 0.2
+        self.min_distance = 9999999  # minimal distance in the given episode
+
         if self.cfg.dim_mode == "3D":
             self.dim_mode = 3
         else:
@@ -446,6 +448,7 @@ class QuadrotorEnvMulti(gym.Env):
 
     def reset(self, obst_density=None, obst_size=None):
         obs, rewards, dones, infos = [], [], [], []
+        self.min_distance = 99999
 
         if obst_density:
             self.obst_density = obst_density
@@ -597,10 +600,13 @@ class QuadrotorEnvMulti(gym.Env):
             existence = -0.1
             rew_formation_score = -wq*np.ones(self.num_agents)*calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
             rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :self.dim_mode], axis=1)
+            current_min_distance = np.min(rel_distances)
+            self.min_distance = min(current_min_distance, self.min_distance)
             rew_proximity_custom = -wd*rel_distances
             rew_captor = np.zeros(self.num_agents)
             rew_helper = np.zeros(self.num_agents)
             rew_existence = existence*np.ones(self.num_agents)
+            rew_dense_min_distance = self.cfg.dense_min_dist_reward*current_min_distance*np.ones(self.num_agents)
             if np.any(self.capture_radius > rel_distances):
                 rew_captor += w_captor*(self.capture_radius > rel_distances)
                 rew_helper += w_helper*(self.capture_radius < rel_distances)
@@ -634,6 +640,7 @@ class QuadrotorEnvMulti(gym.Env):
                 rewards[i] += rew_captor[i]
                 rewards[i] += rew_helper[i]
                 rewards[i] += rew_existence[i]
+                rewards[i] += rew_dense_min_distance[i]
 
                 # infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
                 # infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]

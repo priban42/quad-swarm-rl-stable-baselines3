@@ -14,6 +14,8 @@ class QuadrotorEnvConfig:
     # "angvel", "angvel_vel"
     model_type: str = None
     dist_reward: float = 0.0
+    sparse_min_dist_reward: float = 0.0  #-10.0
+    dense_min_dist_reward: float = -1.0
 
     action_space: str = "angvel"
 

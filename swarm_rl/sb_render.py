@@ -167,13 +167,14 @@ if __name__ == "__main__":
     with open(Path(MODEL_BASE_PATH)/f"{MODEL_NAME}.p", "rb") as f:
         cfg = pickle.load(f)
     cfg.model_type = None
-    # cfg.model_type = "Jasonov"
-    cfg.model_type = "Angelani"
+    cfg.model_type = "Jasonov"
+    # cfg.model_type = "Angelani"
     if cfg.model_type is not None:
         VIDEO_NAME = cfg.model_type
     cfg.quads_render = True
     cfg.initial_capture_radius = 0.2
     cfg.episode_duration = 60.0
+    cfg.seed = 0
     if cfg.dim_mode == "3D":
         cfg.quads_view_mode = ["corner4"]
     env, model = load_model_env(cfg, MODEL_PATH, model_type=cfg.model_type)

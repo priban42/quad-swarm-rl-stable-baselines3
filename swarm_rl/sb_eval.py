@@ -11,6 +11,7 @@ import os
 import pickle
 from dataclasses import dataclass, field
 from swarm_rl.analytic_models import Janosov, Angelani
+from scipy.optimize import minimize
 
 
 def load_model_env(cfg, MODEL_PATH=None, model_type=None):
@@ -30,6 +31,7 @@ def eval_single_config(env, model, NUM_EPISODES=50, MAX_FRAMES=600):
     obs, info = env.reset()
     episode_lengths = []
     successes = []
+    min_distances = []
     for episode in range(NUM_EPISODES):
         obs, info = env.reset()
         done = False
@@ -46,10 +48,87 @@ def eval_single_config(env, model, NUM_EPISODES=50, MAX_FRAMES=600):
             if any(terminated):
                 success = True
                 break
+        min_distances.append(env.env.env.min_distance)
         episode_lengths.append(frame_count)
         successes.append(success)
         print(f"Episode {episode + 1}: Reward = {episode_reward:.02f}, Frames = {frame_count}")
-    return successes, episode_lengths
+    return successes, episode_lengths, min_distances
+
+
+import copy
+from concurrent.futures import ProcessPoolExecutor
+import numpy as np
+
+
+def _eval_worker(args):
+    """Worker function that runs a subset of episodes in its own isolated environment."""
+    cfg, model_path, num_episodes, max_frames, x_candidate = args
+
+    # 1. Each worker safely builds its own environment and model from scratch
+    env, model = load_model_env(cfg, model_path, model_type=cfg.model_type)
+
+    # 2. Apply the current optimization parameters
+    model.set(x_candidate)
+
+    local_successes = []
+    local_episode_lengths = []
+    local_min_distances = []
+
+    try:
+        for episode in range(num_episodes):
+            obs, info = env.reset()
+            frame_count = 0
+            success = False
+
+            while frame_count < max_frames:
+                action, _states = model.predict(obs, deterministic=True)
+                obs, reward, terminated, truncated, info = env.step(action)
+                frame_count += 1
+
+                if any(np.atleast_1d(terminated)):
+                    success = True
+                    break
+
+            local_min_distances.append(env.env.env.min_distance)
+            local_episode_lengths.append(frame_count)
+            local_successes.append(success)
+    finally:
+        env.close()
+
+    return local_successes, local_episode_lengths, local_min_distances
+
+
+def eval_single_config_parallel(cfg, model_path, x_candidate, NUM_EPISODES=50, MAX_FRAMES=600, num_workers=8):
+    """Splits NUM_EPISODES across multiple parallel worker processes safely."""
+
+    # Create a picklable copy of cfg by removing/neutralizing the unpicklable OUNoiseNumba object
+    cfg_clean = copy.deepcopy(cfg)
+    if hasattr(cfg_clean, 'ounoise'):
+        setattr(cfg_clean, 'ounoise', None)
+
+    episodes_per_worker = NUM_EPISODES // num_workers
+    remainder = NUM_EPISODES % num_workers
+
+    tasks = []
+    for i in range(num_workers):
+        n_eps = episodes_per_worker + (remainder if i == num_workers - 1 else 0)
+        if n_eps > 0:
+            # Pass only serializable data (cfg_clean, strings, ints, numpy arrays)
+            tasks.append((cfg_clean, MODEL_PATH, n_eps, MAX_FRAMES, x_candidate))
+
+    successes = []
+    episode_lengths = []
+    min_distances = []
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        results = executor.map(_eval_worker, tasks)
+
+        for worker_successes, worker_lengths, worker_dists in results:
+            successes.extend(worker_successes)
+            episode_lengths.extend(worker_lengths)
+            min_distances.extend(worker_dists)
+
+    return successes, episode_lengths, min_distances
 
 
 def eval(cfg_, EVAL_DIR, attribute_name, attribute_values, MODEL_PATH=None):
@@ -60,7 +139,7 @@ def eval(cfg_, EVAL_DIR, attribute_name, attribute_values, MODEL_PATH=None):
         setattr(cfg, attribute_name, attr_val)
         print(f"setting {attribute_name}={attr_val}")
         env, model = load_model_env(cfg, MODEL_PATH, model_type=cfg.model_type)
-        successes, episode_lengths = eval_single_config(env, model)
+        successes, episode_lengths, min_distances = eval_single_config(env, model)
         env.close()
         eval_logs["cfgs"].append(cfg)
         eval_logs["sucesses"].append(successes)
@@ -68,6 +147,36 @@ def eval(cfg_, EVAL_DIR, attribute_name, attribute_values, MODEL_PATH=None):
     with open(EVAL_DIR/f"{attribute_name}.p", "wb") as f:
         pickle.dump(eval_logs, f)
     print("EVAL DONE")
+
+def tune(cfg_):
+    cfg = deepcopy(cfg_)
+    cfg.initial_capture_radius = 0.01
+    cfg.seed = 0
+    env, model = load_model_env(cfg, MODEL_PATH, model_type=cfg.model_type)
+    x0 = model.get()
+    env.close()
+    def objective(x):
+        # env, model = load_model_env(cfg, MODEL_PATH, model_type=cfg.model_type)
+        # model.set(x)
+        successes, episode_lengths, min_distances = eval_single_config(env, model, NUM_EPISODES=5)
+        # successes, episode_lengths, min_distances = eval_single_config_parallel(cfg, MODEL_PATH, NUM_EPISODES=20, num_workers=8, x_candidate=x)
+        mean_min_dist = np.mean(min_distances)
+        print(model)
+        print(f"{mean_min_dist=}")
+        print(f"{min_distances=}")
+        env.close()
+        return mean_min_dist
+
+# mean_min_dist=0.2514253612616709
+# min_distances=[0.2867881131755944, 0.2612691999813549, 0.21526269025527056, 0.13668563936068664, 0.3571211635354479]
+
+    result = minimize(
+        objective,
+        x0,
+        method='Nelder-Mead',
+        options={'maxiter': 100, 'disp': True}
+    )
+    print(result)
 
 def viz_eval(EVAL_PATHS, attribute_name, invert_x=False):
     import matplotlib.pyplot as plt
@@ -125,5 +234,6 @@ if __name__ == "__main__":
         MODEL_NAME = cfg.model_type
     EVAL_PATH = Path(EVAL_BASE_PATH) / MODEL_NAME
     # eval(cfg, EVAL_PATH, MODEL_PATH=MODEL_PATH, attribute_name="initial_capture_radius", attribute_values=[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1])
+    # tune(cfg)
     # eval(cfg, EVAL_PATH, attribute_name="initial_capture_radius", attribute_values=[0.1])
     viz_eval([EVAL_PATH, f"{EVAL_BASE_PATH}/Jasonov", f"{EVAL_BASE_PATH}/Angelani"], "initial_capture_radius", invert_x=True)
