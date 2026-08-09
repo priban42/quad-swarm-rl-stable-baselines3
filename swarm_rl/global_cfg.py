@@ -9,12 +9,13 @@ class QuadrotorEnvConfig:
     # Quadrotor features
 
     _changes = {}
+    name: str = 'default_name'
 
     multi_substeps: int = 8
     # "angvel", "angvel_vel"
     model_type: str = None
     dist_reward: float = 0.0
-    sparse_min_dist_reward: float = 0.0  #-10.0
+    sparse_min_dist_reward: float = 0.0
     dense_min_dist_reward: float = 0.0
 
     action_space: str = "angvel"

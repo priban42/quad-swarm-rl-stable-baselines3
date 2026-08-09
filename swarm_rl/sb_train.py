@@ -99,6 +99,7 @@ def train(cfg:QuadrotorEnvConfig):
     note_callback = TensorboardHParamCallback(hparams_dict=cfg.to_dict(), note=note)
 
     tb_log_name = f"{cfg.algo}_{cfg.rnn_size}_{cfg.neighbor_hidden_size}_{cfg.rnn_type}_{cfg.rnn_num_layers}"
+    tb_log_name = f"{cfg.name}"
     # 4. Train
     model.learn(
         total_timesteps=cfg.total_timesteps,
