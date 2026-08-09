@@ -135,6 +135,11 @@ def parameter_sweep():
     # cfg.initial_capture_radius = 0.01
     # cfg.dim_mode = "3D"
     # cfg.obs_stacking = 4
+    # cfg.note="using only sparse_min_dist_reward"
+    # cfg.name="sparse_min_dist"
+    # cfg.captor_reward =0.0
+    # cfg.helper_reward=0.0
+    # cfg.sparse_min_dist_reward =-500.0
     args = parse_args_from_cfg(cfg)
     update_cfg_from_args(cfg, args)
     # cfg.obs_repr = 'cdist_cdistdot_dist_distdot_angle_angledot'
