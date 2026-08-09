@@ -17,8 +17,8 @@ class QuadrotorEnvConfig:
     dist_reward: float = 0.0
     sparse_min_dist_reward: float = 0.0
     dense_min_dist_reward: float = 0.0
-    captor_reward:float = 100
-    helper_reward:float = 100
+    captor_reward:float = 100.0
+    helper_reward:float = 100.0
     existance_reward:float = -0.1
 
     action_space: str = "angvel"
