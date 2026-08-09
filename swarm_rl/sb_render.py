@@ -104,7 +104,7 @@ def render_attention_matrix(matrix, img_width=640, img_height=480):
 #     else:
 #         model = PPO.load(MODEL_PATH, env=env, device="cpu")
 #     return env, model
-from sb_eval import load_model_env
+from swarm_rl.sb_eval import load_model_env
 
 
 def render(env, model, VIDEO_DIR = None, VIDEO_NAME="video"):
