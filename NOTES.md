@@ -7,7 +7,7 @@ https://graphite.dev/guides/git-pull-overwrite-local-changes#how-to-overwrite-lo
 https://login.rci.cvut.cz/wiki/how_to_start
 
 launch on cluster:
-ssh pribavoj@login3.rci.cvut.cz
+ssh pribavoj@login1.rci.cvut.cz
 source ~/start-quad.sh
 srun -p gpufast --gres=gpu:1 --ntasks 1 --cpus-per-task 48 --pty bash -i
 python -m swarm_rl.sb_train --num_envs 47 --total_timesteps 20_000_000

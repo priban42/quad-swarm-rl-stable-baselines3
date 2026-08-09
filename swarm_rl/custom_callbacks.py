@@ -435,12 +435,13 @@ class CurriculumCallback(EvalCallback):
         self.window_size = 40
         self.window_i = 0
         self.past_successes = np.zeros(self.window_size)
+        self.min_distances = np.ones(self.window_size)*3.0
         self.sucess_rate = 0
         self.current_capture_radius = initial_capture_radius
 
     def _on_step(self):
         # Let the parent EvalCallback do its eval logic
-        result = super()._on_step()
+        # result = super()._on_step()
 
         self.last_batch = self.training_env.batch
         success_count = 0
@@ -449,9 +450,11 @@ class CurriculumCallback(EvalCallback):
         if self.window_i % self.window_size == 0:
             self.logger.record("curriculum/capture_radius", self.current_capture_radius)
             self.logger.record("curriculum/sucess_rate", self.sucess_rate)
+            self.logger.record("curriculum/mean_min_distance", np.mean(self.min_distances))
         for e in self.training_env.reset_infos:
             if e is not None:
                 self.past_successes[self.window_i % self.window_size] = e["success"]
+                self.min_distances[self.window_i % self.window_size] = e["min_distance"]
                 self.window_i += 1
                 change = True
         if change:
@@ -465,7 +468,7 @@ class CurriculumCallback(EvalCallback):
                 model_path = self.save_path + f"/curriculum_checkpoint/{self.current_capture_radius:0.3f}".replace(".", "_") + ".zip"
                 self.model.save(model_path)
                 print(f"Saving model checkpoint to {model_path}")
-        return result
+        return True
 
 
 class TensorboardHParamCallback(BaseCallback):

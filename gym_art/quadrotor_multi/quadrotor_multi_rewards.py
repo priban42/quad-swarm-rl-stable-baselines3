@@ -448,7 +448,6 @@ class QuadrotorEnvMulti(gym.Env):
 
     def reset(self, obst_density=None, obst_size=None):
         obs, rewards, dones, infos = [], [], [], []
-        self.min_distance = 99999
 
         if obst_density:
             self.obst_density = obst_density
@@ -505,8 +504,9 @@ class QuadrotorEnvMulti(gym.Env):
             self.quads_formation_size = self.scenario.formation_size
             self.all_collisions = {val: [0.0 for _ in range(len(self.envs))] for val in ['drone', 'ground', 'obstacle']}
 
-        reset_info = {"success":self.episode_success}
+        reset_info = {"success":self.episode_success, "min_distance":self.min_distance}
         self.episode_success = False
+        self.min_distance = 99999
         return obs, reset_info  # custom vec env
         # return obs[0], {}  # vec env
         # return obs
