@@ -594,10 +594,9 @@ class QuadrotorEnvMulti(gym.Env):
             wq = 0
             # wd = 0.002
             wd = self.cfg.dist_reward
-            w_captor = 100
-            w_helper = 10
-            w_helper = 100
-            existence = -0.1
+            w_captor = self.cfg.captor_reward
+            w_helper = self.cfg.helper_reward
+            existence = self.cfg.existance_reward
             rew_formation_score = -wq*np.ones(self.num_agents)*calculate_drone_formation_score(positions=self.pos,dt=self.control_dt,  num_agents=self.num_agents, target_pos=self.envs[0].goal)
             rel_distances = np.linalg.norm((self.envs[0].goal - self.pos)[:, :self.dim_mode], axis=1)
             current_min_distance = np.min(rel_distances)
@@ -605,6 +604,7 @@ class QuadrotorEnvMulti(gym.Env):
             rew_proximity_custom = -wd*rel_distances
             rew_captor = np.zeros(self.num_agents)
             rew_helper = np.zeros(self.num_agents)
+            rew_sparse_min_distance = np.zeros(self.num_agents)
             rew_existence = existence*np.ones(self.num_agents)
             rew_dense_min_distance = self.cfg.dense_min_dist_reward*current_min_distance*np.ones(self.num_agents)
             if np.any(self.capture_radius > rel_distances):
@@ -614,6 +614,8 @@ class QuadrotorEnvMulti(gym.Env):
                 print("target caught")
                 self.episode_success = True
 
+            if any(dones):
+                rew_sparse_min_distance = self.cfg.sparse_min_dist_reward * self.min_distance * np.ones(self.num_agents)
 
             # 2) With obstacles
             rew_collisions_obst_quad = np.zeros(self.num_agents)
@@ -641,6 +643,7 @@ class QuadrotorEnvMulti(gym.Env):
                 rewards[i] += rew_helper[i]
                 rewards[i] += rew_existence[i]
                 rewards[i] += rew_dense_min_distance[i]
+                rewards[i] += rew_sparse_min_distance[i]
 
                 # infos[i]["rewards"]["rew_quadcol"] = rew_collisions[i]
                 # infos[i]["rewards"]["rew_proximity"] = rew_proximity[i]
