@@ -79,11 +79,12 @@ class ObsStackingWrapper(gym.Wrapper):
         self.obs_stacking = obs_stacking
         obs_low = np.tile(env.observation_space.low, obs_stacking)
         obs_high = np.tile(env.observation_space.high, obs_stacking)
+        self.obs_length = obs_low.shape[0]
         self._observation_space = gym.spaces.Box(obs_low, obs_high, dtype=np.float32)
 
     def step(self, action):
         obs, reward, terminated, info = self.env.step(action)
-        self.obs_buffer = np.hstack([obs, self.obs_buffer[:, :obs.shape[1]*(self.obs_stacking-1)]])
+        self.obs_buffer = np.hstack([obs, self.obs_buffer[:, :self.obs_length*(self.obs_stacking-1)]])
         return self.obs_buffer, reward, terminated, info  # vec env
         # return obs, reward, terminated, info  # vec env
 

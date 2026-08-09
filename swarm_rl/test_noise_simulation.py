@@ -509,16 +509,16 @@ def sample_camera_measurements(center):
     a_sigma = np.std(np.array(all_a))
     return d_sigma, a_sigma
 
-def sample_camera_measurements_raw(center):
+def sample_camera_measurements_raw(center, iterations=5000):
     all_d = []
     all_a = []
-    for i in range(5000):
+    for i in range(iterations):
         d, a = simulate_camera_measurement(center, 0.2, 0.035, 2)
         all_d.append(d)
         all_a.append(a)
     return all_d, all_a
 
-def visualize_noise_vs_distance(distances, n_samples=500, figsize=(12, 5)):
+def visualize_noise_vs_distance(distances, n_samples=500, figsize=(10, 6)):
     """
     Visualize how measurement noise varies with distance.
 
@@ -545,23 +545,153 @@ def visualize_noise_vs_distance(distances, n_samples=500, figsize=(12, 5)):
     fig.suptitle("Camera Distance Measurement Noise vs Distance", fontsize=16, fontweight="bold")
 
     # ── 1. Distance std vs distance ──────────────────────────────────────────
-    ax1.plot(distances, np.quantile(all_all_d, 0.50, axis=1), "-", color="#1f77b4", linewidth=2, markersize=6)
+    # ax1.plot(distances, np.quantile(all_all_d, 0.20, axis=1), "-", color="#1f77b4", linewidth=2, markersize=6)
     ax1.plot(distances, distances, "--", color="blue", linewidth=2, markersize=6)
     ax1.fill_between(distances, np.quantile(all_all_d, 0.05, axis=1), np.quantile(all_all_d, 0.95, axis=1), alpha=0.15, color="#1f77b4")
+    ax1.fill_between(distances, np.quantile(all_all_d, 0.1, axis=1), np.quantile(all_all_d, 0.9, axis=1), alpha=0.15, color="#1f77b4")
+    ax1.fill_between(distances, np.quantile(all_all_d, 0.2, axis=1), np.quantile(all_all_d, 0.8, axis=1), alpha=0.15, color="#1f77b4")
     ax1.set_xlabel("True Distance (m)")
     ax1.set_ylabel("Estimated distance median + 5% quantiles")
     ax1.set_title("Estimated distance noise")
     ax1.grid(True, linestyle="--", alpha=0.5)
+    ticks = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+    ax1.set_xticks(ticks)
+    ax1.set_yticks(ticks)
+    ax1.set_xlim(1, 10)
+    ax1.set_ylim(1, 22)
+
 
     plt.savefig("noise_vs_distance.png", dpi=150, bbox_inches="tight")
-    plt.show()
+
     print("Figure saved to noise_vs_distance.png")
+
+    fig.savefig("noise_vs_distance.svg", format="svg", bbox_inches="tight")
+    print("Figure saved to noise_vs_distance.svg")
+
+    plt.show()
+
+
+def visualize_noise_vs_angle(distances, n_samples=500, figsize=(10, 6)):
+    """
+    Visualize how measurement noise varies with distance.
+
+    Args:
+        distances: list or array of distances to evaluate noise at
+        n_samples:  number of samples per distance (default 500)
+        figsize:    figure size tuple (default (14, 10))
+    """
+    dist_std = []
+    dist_mean = []
+    all_all_a = []
+    for d in distances:
+        center = np.array([0, d])  # place target at given distance along x-axis
+        all_d, all_a = sample_camera_measurements_raw(center, iterations=50000)
+        all_all_a.append(all_a)
+        dist_std.append(np.std(all_a))
+        dist_mean.append(np.mean(all_a))
+    all_all_a = np.array(all_all_a)
+    all_all_a = all_all_a*180/np.pi
+
+    dist_std = np.array(dist_std)
+    dist_mean = np.array(dist_mean)
+
+    fig, (ax1) = plt.subplots(1, 1, figsize=figsize)
+    fig.suptitle("Camera Distance Measurement Noise vs Distance", fontsize=16, fontweight="bold")
+
+    # ── 1. Distance std vs distance ──────────────────────────────────────────
+    # ax1.plot(distances, np.quantile(all_all_d, 0.20, axis=1), "-", color="#1f77b4", linewidth=2, markersize=6)
+    ax1.plot(distances, np.zeros_like(distances), "--", color="blue", linewidth=2, markersize=6)
+    ax1.fill_between(distances, np.quantile(all_all_a, 0.05, axis=1), np.quantile(all_all_a, 0.95, axis=1), alpha=0.15, color="#1f77b4")
+    ax1.fill_between(distances, np.quantile(all_all_a, 0.1, axis=1), np.quantile(all_all_a, 0.9, axis=1), alpha=0.15, color="#1f77b4")
+    ax1.fill_between(distances, np.quantile(all_all_a, 0.2, axis=1), np.quantile(all_all_a, 0.8, axis=1), alpha=0.15, color="#1f77b4")
+    # ax1.set_xlabel("True Distance (m)")
+    # ax1.set_ylabel("Estimated distance median + 5% quantiles")
+    # ax1.set_title("Estimated distance noise")
+    ax1.grid(True, linestyle="--", alpha=0.5)
+    y_ticks = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5]
+    x_ticks = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+    ax1.set_xticks(x_ticks)
+    ax1.set_yticks(y_ticks)
+    ax1.set_xlim(1, 10)
+    ax1.set_ylim(-0.45, 0.45)
+
+
+    plt.savefig("noise_vs_angle.png", dpi=150, bbox_inches="tight")
+
+    print("Figure saved to noise_vs_angle.png")
+
+    fig.savefig("noise_vs_angle.svg", format="svg", bbox_inches="tight")
+    print("Figure saved to noise_vs_angle.svg")
+
+    plt.show()
+
+def visualize_noise_vs_angle2(angles, n_samples=500, figsize=(10, 6)):
+    """
+    Visualize how measurement noise varies with distance.
+
+    Args:
+        distances: list or array of distances to evaluate noise at
+        n_samples:  number of samples per distance (default 500)
+        figsize:    figure size tuple (default (14, 10))
+    """
+    dist_std = []
+    dist_mean = []
+    all_all_a = []
+    d = 10
+    for a in angles:
+        center = np.array([np.sin(a)*d, np.cos(a)*d])  # place target at given distance along x-axis
+        all_d, all_a = sample_camera_measurements_raw(center, iterations=50000)
+        all_all_a.append(all_a)
+        dist_std.append(np.std(all_a))
+        dist_mean.append(np.mean(all_a))
+    all_all_a = np.array(all_all_a)
+    all_all_a = all_all_a - angles[np.newaxis].T
+    all_all_a = all_all_a*180/np.pi
+
+    dist_std = np.array(dist_std)
+    dist_mean = np.array(dist_mean)
+
+
+    fig, (ax1) = plt.subplots(1, 1, figsize=figsize)
+    fig.suptitle("Camera Distance Measurement Noise vs Distance", fontsize=16, fontweight="bold")
+
+    deg_angles = angles*180/np.pi
+    # ── 1. Distance std vs distance ──────────────────────────────────────────
+    # ax1.plot(distances, np.quantile(all_all_d, 0.20, axis=1), "-", color="#1f77b4", linewidth=2, markersize=6)
+    ax1.plot(deg_angles, np.zeros_like(deg_angles), "--", color="blue", linewidth=2, markersize=6)
+    ax1.fill_between(deg_angles, np.quantile(all_all_a, 0.05, axis=1), np.quantile(all_all_a, 0.95, axis=1), alpha=0.15, color="#1f77b4")
+    ax1.fill_between(deg_angles, np.quantile(all_all_a, 0.1, axis=1), np.quantile(all_all_a, 0.9, axis=1), alpha=0.15, color="#1f77b4")
+    ax1.fill_between(deg_angles, np.quantile(all_all_a, 0.2, axis=1), np.quantile(all_all_a, 0.8, axis=1), alpha=0.15, color="#1f77b4")
+    # ax1.set_xlabel("True Distance (m)")
+    # ax1.set_ylabel("Estimated distance median + 5% quantiles")
+    # ax1.set_title("Estimated distance noise")
+    ax1.grid(True, linestyle="--", alpha=0.5)
+    # y_ticks = [-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5]
+    # x_ticks = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
+    # ax1.set_xticks(x_ticks)
+    # ax1.set_yticks(y_ticks)
+    # ax1.set_xlim(0, np.pi/2)
+    # ax1.set_ylim(-0.45, 0.45)
+
+
+    plt.savefig("noise_vs_angle2.png", dpi=150, bbox_inches="tight")
+
+    print("Figure saved to noise_vs_angle.png")
+
+    fig.savefig("noise_vs_angle.svg", format="svg", bbox_inches="tight")
+    print("Figure saved to noise_vs_angle.svg")
+
+    plt.show()
+
 
 def main():
     # ── scene setup ───────────────────────────────────────────────────────────
 
-    distances = np.linspace(2, 10, 20)
-    visualize_noise_vs_distance(distances)
+    distances = np.linspace(1, 10, 20)
+    angles = np.linspace(0, np.pi*(360/3)/360, 20)
+    # visualize_noise_vs_distance(distances)
+    # visualize_noise_vs_angle(distances)
+    visualize_noise_vs_angle2(angles)
 
 
     viz = SceneVisualizer(fov_deg=70, max_range=15, dark_theme=False)
@@ -610,5 +740,5 @@ def test_smooth_angle():
     pass
 
 if __name__ == "__main__":
-    test_smooth_angle()
-    # main()
+    # test_smooth_angle()
+    main()

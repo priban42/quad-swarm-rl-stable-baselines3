@@ -420,6 +420,7 @@ class Quadrotor3DSceneMulti:
 
                 shadow_pos = 0 + dyn.pos
                 shadow_pos[2] = 0.001  # avoid z-fighting
+                shadow_pos[2] = -0.001  # turning it off
                 matrix = r3d.translate(shadow_pos)
                 self.shadow_transforms[i].set_transform_nocollide(matrix)
 

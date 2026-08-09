@@ -287,7 +287,7 @@ class QuadrotorSingle:
                                           dynamics_steps_num=self.sim_steps, room_box=self.room_box,
                                           dim_mode=self.dim_mode, gravity=self.gravity,
                                           dynamics_simplification=self.dynamics_simplification,
-                                          use_numba=self.use_numba, dt=self.dt, rng=self.rng)
+                                          use_numba=self.use_numba, dt=self.dt, rng=self.rng, thrust_noise_multiplier=self.cfg.thrust_noise_multiplier)
 
         # CONTROL
         # if self.raw_control:
@@ -450,7 +450,7 @@ class QuadrotorSingle:
             else:
                 pca = self.pre_controller.update_vel_height_dir(current_state, action, self.goal[2], self.dt)
         else:
-            pca = self.pre_controller.test_step_response(current_state, self.dt, ref=self.ref,file_name="vel_response.p")
+            pca = self.pre_controller.test_step_response(current_state, self.dt, ref=self.ref, file_name="vel_response.p")
             self.response = current_state
 
         reordered_pre_controlled_action = np.array([pca[0], pca[3], pca[1], pca[2]])*2 - 1

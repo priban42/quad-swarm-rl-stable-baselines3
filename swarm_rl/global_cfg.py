@@ -10,6 +10,7 @@ class QuadrotorEnvConfig:
 
     _changes = {}
 
+    multi_substeps: int = 8
     # "angvel", "angvel_vel"
     model_type: str = None
     dist_reward: float = 0.0
@@ -155,6 +156,7 @@ class QuadrotorEnvConfig:
     dyn_sampler_1: Optional[Any] = None
     dyn_sampler_2: Optional[Any] = None
     dynamics_simplification: bool = False
+    thrust_noise_multiplier: float = 1.0
 
     # Simulation
     sim_freq: float = 200.0

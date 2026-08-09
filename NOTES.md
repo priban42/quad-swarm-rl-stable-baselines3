@@ -32,6 +32,9 @@ scancel 10182533
 tensorboard --logdir ./swarm_rl/PPO_1_ang/tb/PPO_1
 tensorboard --logdir ./swarm_rl/quad_experiment2 --host 0.0.0.0 --port 6006
 
+remote tensorboard:
+sshfs pribavoj@login3.rci.cvut.cz:/home/pribavoj/quad-swarm-rl-stable-baselines3/quad_experiment3 /home/vojta/PycharmProjects/quad-swarm-rl-stable-baselines3/remote_logs_rci
+tensorboard --logdir ./remote_logs_rci/tb --host 0.0.0.0 --port 6006
 
 train wandb:
 python -m sample_factory.launcher.run --run=swarm_rl.runs.quad_multi_mix_modified --max_parallel=4 --pause_between=1 --experiments_per_gpu=4 --num_gpus=1

@@ -35,10 +35,12 @@ class QuadrotorDynamics:
     """
 
     def __init__(self, model_params, room_box=None, dynamics_steps_num=1, dim_mode="3D", gravity=GRAV,
-                 dynamics_simplification=False, use_numba=False, dt=1/200, rng=None):
+                 dynamics_simplification=False, use_numba=False, dt=1/200, rng=None, thrust_noise_multiplier=1.0):
         # Pre-set Parameters
         self.dt = dt
         self.use_numba = use_numba
+
+        self.thrust_noise_multiplier = thrust_noise_multiplier
 
         # Dynamics
         self.dynamics_steps_num = dynamics_steps_num
@@ -122,7 +124,7 @@ class QuadrotorDynamics:
         self.motor_damp_time_up = self.model_params["motor"]["damp_time_up"]
         self.motor_damp_time_down = self.model_params["motor"]["damp_time_down"]
 
-        self.thrust_noise_ratio = self.model_params["noise"]["thrust_noise_ratio"]
+        self.thrust_noise_ratio = self.model_params["noise"]["thrust_noise_ratio"]*self.thrust_noise_multiplier
         self.vel_damp = self.model_params["damp"]["vel"]
         self.damp_omega_quadratic = self.model_params["damp"]["omega_quadratic"]
 

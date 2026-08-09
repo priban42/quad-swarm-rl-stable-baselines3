@@ -97,27 +97,23 @@ def render_attention_matrix(matrix, img_width=640, img_height=480):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     return img
 
-def load_model_env(cfg, MODEL_PATH=None, model_type=None):
-    env = SB3QuadrotorEnv(cfg)
-    if model_type == "Jasonov":
-        model = Janosov(cfg)
-    else:
-        model = PPO.load(MODEL_PATH, env=env, device="cpu")
-    return env, model
+# def load_model_env(cfg, MODEL_PATH=None, model_type=None):
+#     env = SB3QuadrotorEnv(cfg)
+#     if model_type == "Jasonov":
+#         model = Janosov(cfg)
+#     else:
+#         model = PPO.load(MODEL_PATH, env=env, device="cpu")
+#     return env, model
+from sb_eval import load_model_env
 
-def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
-    cfg = deepcopy(cfg_)
+
+def render(env, model, VIDEO_DIR = None, VIDEO_NAME="video"):
+    cfg = env.cfg
     NUM_EPISODES = 5
     MAX_FRAMES = 600  # maximum frames per episode
     episode_duration = 60.0
     FPS = 30
 
-    cfg.quads_render = True
-    cfg.initial_capture_radius = 0.2
-    cfg.episode_duration = 60.0
-    if cfg.dim_mode == "3D":
-        cfg.quads_view_mode = ["corner4"]
-    env, model = load_model_env(cfg, MODEL_PATH, model_type=cfg.model_type)
     # env = SB3QuadrotorEnv(cfg)
     # model = PPO.load(MODEL_PATH, env=env, device="cpu")
 
@@ -163,17 +159,23 @@ def render(cfg_, MODEL_PATH, VIDEO_DIR = None, VIDEO_NAME="video"):
 
 if __name__ == "__main__":
     MODEL_BASE_PATH = "quad_experiment3/final_models"
-    MODEL_NAME = "ppo_128_128_full_3_50"
+    MODEL_NAME = "ppo_128_128_full_3_36"
     VIDEO_DIR = "quad_experiment3/videos"
     VIDEO_NAME = MODEL_NAME
     MODEL_PATH = Path(MODEL_BASE_PATH) / f"{MODEL_NAME}.zip"
 
     with open(Path(MODEL_BASE_PATH)/f"{MODEL_NAME}.p", "rb") as f:
         cfg = pickle.load(f)
-    env, model = load_model_env(cfg, MODEL_PATH)
     cfg.model_type = None
-    cfg.model_type = "Jasonov"
+    # cfg.model_type = "Jasonov"
+    cfg.model_type = "Angelani"
     if cfg.model_type is not None:
         VIDEO_NAME = cfg.model_type
+    cfg.quads_render = True
+    cfg.initial_capture_radius = 0.2
+    cfg.episode_duration = 60.0
+    if cfg.dim_mode == "3D":
+        cfg.quads_view_mode = ["corner4"]
+    env, model = load_model_env(cfg, MODEL_PATH, model_type=cfg.model_type)
     # env, model = load_model_env(cfg, MODEL_PATH, "Jasonov")
-    render(cfg, MODEL_PATH=MODEL_PATH, VIDEO_DIR=VIDEO_DIR, VIDEO_NAME=VIDEO_NAME)
+    render(env, model, VIDEO_DIR=VIDEO_DIR, VIDEO_NAME=VIDEO_NAME)

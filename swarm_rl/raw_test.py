@@ -8,22 +8,38 @@ from gym_art.quadrotor_multi.quad_utils import dict_update_existing
 from gym_art.quadrotor_multi.Controller.references import *
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
+from global_cfg import QuadrotorEnvConfig
 
 class RawTester:
-    def __init__(self, RENDER=False, quads_mode="static_diff_goal"):
+    def __init__(self, RENDER=False, quads_mode="static_diff_goal", noise=True):
         # MODEL_PATH = "PPO/best_model/best_model.zip"  # path to your trained model
         self.MODEL_PATH = "PPO_1_controller/best_model/best_model.zip"  # path to your trained model
         # MODEL_PATH = "PPO_4_controller/checkpoints/quad_swarm_5199168_steps.zip"  # path to your trained model
-        self.NUM_EPISODES = 3
-        self.MAX_FRAMES = 120  # maximum frames per episode
+        self.NUM_EPISODES = 1
+        self.MAX_FRAMES = 300  # maximum frames per episode
         self.episode_duration = 15.0
         self.VIDEO_PATH = "quad_raw_test.mp4"
         self.FPS = 30
         self.RENDER = RENDER
         self.num_of_agents = 1
         # env = SB3QuadrotorEnv(quads_render=True, num_agents=num_of_agents, quads_mode="static_diff_goal")
-        self.env = SB3QuadrotorEnv(seed=3, quads_render=self.RENDER, episode_duration=self.episode_duration, num_agents=self.num_of_agents,
-                              quads_mode=quads_mode, thrust_noise_ratio=0.0)
+        self.cfg = QuadrotorEnvConfig()
+        self.cfg.seed = 3
+        self.cfg.thrust_noise_ratio = 0.0
+        self.cfg.num_agents = self.num_of_agents
+        self.cfg.episode_duration = self.episode_duration
+        self.cfg.quads_render = self.RENDER
+        self.cfg.initial_capture_radius = 0.0
+        self.cfg.multi_substeps=1
+
+        # remove noise
+        # self.cfg.thrust_noise_multiplier = 0.0
+        if noise:
+            self.cfg.thrust_noise_multiplier = 1.0
+        else:
+            self.cfg.thrust_noise_multiplier = 0.0
+
+        self.env = SB3QuadrotorEnv(self.cfg)
 
         obs, info = self.env.reset()
         if self.RENDER:
@@ -200,19 +216,21 @@ def plot_stepinfo(ax, info, settling_threshold=0.02):
 
     # Settling band
     band = settling_threshold * abs(y_final)
-    ax.axhline(y_final + band, linestyle=":", linewidth=1)
-    ax.axhline(y_final - band, linestyle=":", linewidth=1)
+    # ax.axhline(y_final + band, linestyle=":", linewidth=1)
+    # ax.axhline(y_final - band, linestyle=":", linewidth=1)
+    ax.axhline(y_final, linestyle="--", linewidth=1, color="red")
 
     # Peak marker
-    ax.plot(peak_time, peak, marker="o")
-    ax.annotate(
-        f"Peak = {peak:.3f}, Overshoot = {info['OvershootPercent']:.1f}%",
-        xy=(peak_time, peak),
-        xytext=(peak_time, peak),
-        textcoords="offset points",
-        xycoords="data",
-        arrowprops=dict(arrowstyle="->"),
-    )
+    # ax.plot(peak_time, peak, marker="o")
+    # ax.annotate(
+    #     # f"Peak = {peak:.3f}, Overshoot = {info['OvershootPercent']:.1f}%",
+    #     f"Overshoot = {info['OvershootPercent']:.1f}%",
+    #     xy=(peak_time, peak),
+    #     xytext=(60-int(peak_time*100), -30),
+    #     textcoords="offset points",
+    #     xycoords="data",
+    #     arrowprops=dict(arrowstyle="->"),
+    # )
 
     # Settling time marker
     if not np.isnan(settling_time):
@@ -261,13 +279,10 @@ def tune_pid():
         ax = axes[controler_id//2, controler_id%2]
         ref = refs[controler_id]
 
-
-
         raw_tester.MAX_FRAMES = episode_lengths[controler_id]
         responses = raw_tester.run_episodes(ref)
         x, y, y_label, ref_height = extract_responses(responses, ref)
         step_info = stepinfo(x, y, ref_height)
-
 
         plot_responses(ax, x, y, y_label, ref_height)
         plot_stepinfo(ax, step_info)
@@ -309,7 +324,7 @@ def tune_pid():
         print(result.message)
         print(result.status)
         print(result.nit)
-    # optimize()
+    optimize()
 
 def main():
     raw_tester = RawTester(RENDER=True, quads_mode="dynamic_same_goal_trajectory")
@@ -324,4 +339,36 @@ def main():
 
 if __name__ == "__main__":
     # tune_pid()
-    main()
+    # main()
+    refs = [Position(position=np.array([1, 0, 2]), heading=0),
+    VelocityHdg(velocity=np.array([1, 0, 0]), heading=0),
+    AccelerationHdg(acceleration=np.array([1, 0, 0]), heading=0)]
+
+    for i in range(len(refs)):
+        fig, axes = plt.subplots(1, 1, figsize=(6, 5))
+        ax = axes
+        ref = refs[i]
+        ylim = 1.15
+        frames = [320, 350, 80]
+        ylims = [1.2, 1.2, 1.2]
+
+        for j in range(10):
+            raw_tester = RawTester(RENDER=False, quads_mode="dynamic_same_goal_trajectory", noise=True)
+            raw_tester.MAX_FRAMES = frames[i]
+            responses = raw_tester.run_episodes(ref)
+            x, y, y_label, ref_height = extract_responses(responses, ref)
+            ax.plot(x, y, alpha=0.2)
+        raw_tester = RawTester(RENDER=False, quads_mode="dynamic_same_goal_trajectory", noise=False)
+        raw_tester.MAX_FRAMES = frames[i]
+        responses = raw_tester.run_episodes(ref)
+        x, y, y_label, ref_height = extract_responses(responses, ref)
+        ax.plot(x, y, linewidth=2, color='C0')
+        step_info = stepinfo(x, y, ref_height, settling_threshold=0.05)
+        ax.set_xlim(0, raw_tester.MAX_FRAMES*0.005)
+        ax.set_ylim(0, ylims[i])
+
+        plot_stepinfo(ax, step_info)
+        plt.show()
+        fig_name = f"pid_compact{i}.svg"
+        fig.savefig(fig_name, format="svg", bbox_inches="tight")
+        print(f"Figure saved to {fig_name}")
