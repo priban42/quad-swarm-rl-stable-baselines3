@@ -132,7 +132,7 @@ def parameter_sweep():
     cfg.pixel_noise_cam = 3.0
     cfg.neighbor_obs_type = "dist_angle"
     cfg.obs_repr = 'cdist_dist_angle'
-    cfg.initial_capture_radius = 0.01
+    # cfg.initial_capture_radius = 0.01
     # cfg.dim_mode = "3D"
     # cfg.obs_stacking = 4
     args = parse_args_from_cfg(cfg)
