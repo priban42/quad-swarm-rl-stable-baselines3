@@ -220,7 +220,8 @@ def viz_eval(EVAL_PATHS, attribute_name, invert_x=False):
 
 if __name__ == "__main__":
     MODEL_BASE_PATH = "quad_experiment3/final_models"
-    MODEL_NAME = "ppo_128_128_full_3_36"
+    # MODEL_NAME = "ppo_128_128_full_3_36"
+    MODEL_NAME = "big_gamma_0.995_1"
     EVAL_BASE_PATH = "eval"
     MODEL_PATH = Path(MODEL_BASE_PATH) / f"{MODEL_NAME}.zip"
     with open(Path(MODEL_BASE_PATH)/f"{MODEL_NAME}.p", "rb") as f:
@@ -228,12 +229,12 @@ if __name__ == "__main__":
     cfg.model_type = None
     # cfg.model_type = "Jasonov"
     # cfg.model_type = "Angelani"
-    cfg.initial_capture_radius = 0.2
+    # cfg.initial_capture_radius = 0.2
     cfg.episode_duration = 60.0
     if cfg.model_type is not None:
         MODEL_NAME = cfg.model_type
     EVAL_PATH = Path(EVAL_BASE_PATH) / MODEL_NAME
-    # eval(cfg, EVAL_PATH, MODEL_PATH=MODEL_PATH, attribute_name="initial_capture_radius", attribute_values=[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1])
+    eval(cfg, EVAL_PATH, MODEL_PATH=MODEL_PATH, attribute_name="initial_capture_radius", attribute_values=[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1])
     # tune(cfg)
     # eval(cfg, EVAL_PATH, attribute_name="initial_capture_radius", attribute_values=[0.1])
     viz_eval([EVAL_PATH, f"{EVAL_BASE_PATH}/Jasonov", f"{EVAL_BASE_PATH}/Angelani"], "initial_capture_radius", invert_x=True)

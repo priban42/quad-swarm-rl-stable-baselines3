@@ -615,7 +615,7 @@ class QuadrotorEnvMulti(gym.Env):
                 self.episode_success = True
 
             if any(dones):
-                rew_sparse_min_distance = self.cfg.sparse_min_dist_reward * self.min_distance * np.ones(self.num_agents)
+                rew_sparse_min_distance = self.cfg.sparse_min_dist_reward * max((5-self.min_distance), 0) * np.ones(self.num_agents)
 
             # 2) With obstacles
             rew_collisions_obst_quad = np.zeros(self.num_agents)

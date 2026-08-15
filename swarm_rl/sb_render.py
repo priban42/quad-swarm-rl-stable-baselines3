@@ -160,6 +160,8 @@ def render(env, model, VIDEO_DIR = None, VIDEO_NAME="video"):
 if __name__ == "__main__":
     MODEL_BASE_PATH = "quad_experiment3/final_models"
     MODEL_NAME = "ppo_128_128_full_3_36"
+    MODEL_NAME = "helper200captor200_1"
+    MODEL_NAME = "big_gamma_0.995_1"
     VIDEO_DIR = "quad_experiment3/videos"
     VIDEO_NAME = MODEL_NAME
     MODEL_PATH = Path(MODEL_BASE_PATH) / f"{MODEL_NAME}.zip"
@@ -167,7 +169,7 @@ if __name__ == "__main__":
     with open(Path(MODEL_BASE_PATH)/f"{MODEL_NAME}.p", "rb") as f:
         cfg = pickle.load(f)
     cfg.model_type = None
-    cfg.model_type = "Jasonov"
+    # cfg.model_type = "Jasonov"
     # cfg.model_type = "Angelani"
     if cfg.model_type is not None:
         VIDEO_NAME = cfg.model_type
