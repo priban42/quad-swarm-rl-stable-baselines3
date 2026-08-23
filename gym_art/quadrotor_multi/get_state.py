@@ -207,6 +207,146 @@ def state_cdist_cdistdot_ndist_distdot_nsangle_angledot(self):
     nangle = nangle[0]
     return np.array([cdist, cdistdot, ndist, dot_rel_dist, np.cos(nangle), np.sin(nangle), -np.sign(ang_vel*rel_angle)*abs(ang_vel)])
 
+def state_cdist_ndist_nangle(self):
+    if self.use_numba:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(
+            self.dynamics.pos,
+            self.dynamics.vel,
+            self.dynamics.rot,
+            self.dynamics.omega,
+            self.dynamics.accelerometer,
+            self.dt
+        )
+    else:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise(
+            pos=self.dynamics.pos,
+            vel=self.dynamics.vel,
+            rot=self.dynamics.rot,
+            omega=self.dynamics.omega,
+            acc=self.dynamics.accelerometer,
+            dt=self.dt
+        )
+    rel_pos = self.goal[:2] - pos[:2]
+    angle_world = self.pre_controller.angle
+
+    cdist = np.linalg.norm(pos[:2])
+    ndist, nangle = simulate_camera_measurement_vect(rel_pos[:, np.newaxis], self.cfg.neighbour_size_cam, self.cfg.focal_length_cam, self.cfg.pixel_noise_cam, np.ones(1)*angle_world, cameras_num=np.ones(1)*self.cfg.n_cameras)
+    ndist = np.clip(ndist, 0, 10)[0]
+    nangle = nangle[0]
+    return np.array([cdist, ndist, nangle])
+
+def state_ndist_nangle(self):
+    if self.use_numba:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(
+            self.dynamics.pos,
+            self.dynamics.vel,
+            self.dynamics.rot,
+            self.dynamics.omega,
+            self.dynamics.accelerometer,
+            self.dt
+        )
+    else:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise(
+            pos=self.dynamics.pos,
+            vel=self.dynamics.vel,
+            rot=self.dynamics.rot,
+            omega=self.dynamics.omega,
+            acc=self.dynamics.accelerometer,
+            dt=self.dt
+        )
+    rel_pos = self.goal[:2] - pos[:2]
+    angle_world = self.pre_controller.angle
+
+    ndist, nangle = simulate_camera_measurement_vect(rel_pos[:, np.newaxis], self.cfg.neighbour_size_cam, self.cfg.focal_length_cam, self.cfg.pixel_noise_cam, np.ones(1)*angle_world, cameras_num=np.ones(1)*self.cfg.n_cameras)
+    ndist = np.clip(ndist, 0, 10)[0]
+    nangle = nangle[0]
+    return np.array([ndist, nangle])
+
+def state_nangle(self):
+    if self.use_numba:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(
+            self.dynamics.pos,
+            self.dynamics.vel,
+            self.dynamics.rot,
+            self.dynamics.omega,
+            self.dynamics.accelerometer,
+            self.dt
+        )
+    else:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise(
+            pos=self.dynamics.pos,
+            vel=self.dynamics.vel,
+            rot=self.dynamics.rot,
+            omega=self.dynamics.omega,
+            acc=self.dynamics.accelerometer,
+            dt=self.dt
+        )
+    rel_pos = self.goal[:2] - pos[:2]
+    angle_world = self.pre_controller.angle
+
+    ndist, nangle = simulate_camera_measurement_vect(rel_pos[:, np.newaxis], self.cfg.neighbour_size_cam, self.cfg.focal_length_cam, self.cfg.pixel_noise_cam, np.ones(1)*angle_world, cameras_num=np.ones(1)*self.cfg.n_cameras)
+    nangle = nangle[0]
+    return np.array([nangle])
+
+def state_dist_angle(self):
+    if self.use_numba:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(
+            self.dynamics.pos,
+            self.dynamics.vel,
+            self.dynamics.rot,
+            self.dynamics.omega,
+            self.dynamics.accelerometer,
+            self.dt
+        )
+    else:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise(
+            pos=self.dynamics.pos,
+            vel=self.dynamics.vel,
+            rot=self.dynamics.rot,
+            omega=self.dynamics.omega,
+            acc=self.dynamics.accelerometer,
+            dt=self.dt
+        )
+    rel_pos = self.goal[:2] - pos[:2]
+    rel_dist = np.linalg.norm(rel_pos)
+    angle_world = self.pre_controller.angle
+    rel_pos_norm = rel_pos/np.linalg.norm(rel_pos)
+    target_angle_world = np.arctan2(rel_pos_norm[1], rel_pos_norm[0])
+    rel_angle = target_angle_world - angle_world
+    rel_angle = (rel_angle + np.pi)%(2*np.pi) - np.pi
+
+    return np.array([rel_dist, rel_angle])
+
+def state_angle(self):
+    if self.use_numba:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(
+            self.dynamics.pos,
+            self.dynamics.vel,
+            self.dynamics.rot,
+            self.dynamics.omega,
+            self.dynamics.accelerometer,
+            self.dt
+        )
+    else:
+        pos, vel, rot, omega, acc = self.sense_noise.add_noise(
+            pos=self.dynamics.pos,
+            vel=self.dynamics.vel,
+            rot=self.dynamics.rot,
+            omega=self.dynamics.omega,
+            acc=self.dynamics.accelerometer,
+            dt=self.dt
+        )
+    rel_pos = self.goal[:2] - pos[:2]
+    angle_world = self.pre_controller.angle
+    rel_pos_norm = rel_pos/np.linalg.norm(rel_pos)
+    target_angle_world = np.arctan2(rel_pos_norm[1], rel_pos_norm[0])
+    rel_angle = target_angle_world - angle_world
+    rel_angle = (rel_angle + np.pi)%(2*np.pi) - np.pi
+
+    return np.array([rel_angle])
+
+
+
 def state_cdist_cdistdot_ndist_distdot_nangle_angledot(self):
     if self.use_numba:
         pos, vel, rot, omega, acc = self.sense_noise.add_noise_numba(

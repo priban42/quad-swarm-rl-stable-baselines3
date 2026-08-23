@@ -214,13 +214,8 @@ class QuadrotorEnvMulti(gym.Env):
             # if not specified explicitly, consider all neighbors
             indices = [j for j in range(self.num_agents) if j != i]
         ret = np.zeros((len(indices), 0))
-        if "dist" in self.envs[i].neighbor_obs_type_set:
-            cur_pos = self.pos[i]
-            pos_neighbor = np.stack([self.pos[j] for j in indices])
-            pos_rel = pos_neighbor - cur_pos
-            dist_rel = np.linalg.norm(pos_rel, axis=1)
-            ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
-        if "ndist" in self.envs[i].neighbor_obs_type_set:
+        if "ndist" in self.envs[i].neighbor_obs_type_set or "nangle" in self.envs[i].neighbor_obs_type_set:
+            #  ndist and nangle need to be computed together
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
             pos_rel = pos_neighbor - cur_pos
@@ -229,10 +224,17 @@ class QuadrotorEnvMulti(gym.Env):
             noisy_dist, noisy_angle = simulate_camera_measurement_vect(pos_rel[:, :2].T, self.cfg.neighbour_size_cam, self.cfg.focal_length_cam, self.cfg.pixel_noise_cam,
                                                   np.ones(len(indices))*angle_world, cameras_num=np.ones(len(indices))*self.cfg.n_cameras)
             noisy_dist = np.clip(noisy_dist, 0, 10)
-
+        if "dist" in self.envs[i].neighbor_obs_type_set:
+            cur_pos = self.pos[i]
+            pos_neighbor = np.stack([self.pos[j] for j in indices])
+            pos_rel = pos_neighbor - cur_pos
+            dist_rel = np.linalg.norm(pos_rel, axis=1)
+            ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
+        if "ndist" in self.envs[i].neighbor_obs_type_set:
             ret = np.concatenate((ret, noisy_dist[:, np.newaxis]), axis=1)
-            # ret = np.concatenate((ret, dist_rel[:, np.newaxis]), axis=1)
-
+        if "nangle" in self.envs[i].neighbor_obs_type_set:
+            ret = np.concatenate((ret, noisy_angle[:, np.newaxis]), axis=1)
+            # ret = np.concatenate(rel_angle, axis=1)
         if "angle" in self.envs[i].neighbor_obs_type_set:
             cur_pos = self.pos[i]
             pos_neighbor = np.stack([self.pos[j] for j in indices])
@@ -253,20 +255,7 @@ class QuadrotorEnvMulti(gym.Env):
             rel_angle = target_angle_world - angle_world
             rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
             ret = np.concatenate((ret, np.vstack((np.cos(rel_angle), np.sin(rel_angle))).T), axis=1)
-        if "nangle" in self.envs[i].neighbor_obs_type_set:
-            # cur_pos = self.pos[i]
-            # pos_neighbor = np.stack([self.pos[j] for j in indices])
-            # pos_rel = pos_neighbor - cur_pos
-            # angle_world = self.envs[i].pre_controller.angle
-            # rel_pos_norm = pos_rel / np.linalg.norm(pos_rel, axis=1)[:, np.newaxis]
-            # target_angle_world = np.arctan2(rel_pos_norm[:, 1], rel_pos_norm[:, 0])
-            # rel_angle = target_angle_world - angle_world
-            # rel_angle = (rel_angle + np.pi) % (2 * np.pi) - np.pi
-            # if np.any(abs(rel_angle-noisy_angle)>0.000001):
-            #     pass
-            # if np.
-            ret = np.concatenate((ret, noisy_angle[:, np.newaxis]), axis=1)
-            # ret = np.concatenate(rel_angle, axis=1)
+
         if "vel2d" in self.envs[i].neighbor_obs_type_set:
             cur_vel = self.vel[i]
             vel_neighbor = np.stack([self.vel[j] for j in indices])

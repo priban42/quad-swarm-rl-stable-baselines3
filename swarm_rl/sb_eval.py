@@ -234,7 +234,7 @@ if __name__ == "__main__":
     if cfg.model_type is not None:
         MODEL_NAME = cfg.model_type
     EVAL_PATH = Path(EVAL_BASE_PATH) / MODEL_NAME
-    eval(cfg, EVAL_PATH, MODEL_PATH=MODEL_PATH, attribute_name="initial_capture_radius", attribute_values=[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1])
+    # eval(cfg, EVAL_PATH, MODEL_PATH=MODEL_PATH, attribute_name="initial_capture_radius", attribute_values=[1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1])
     # tune(cfg)
     # eval(cfg, EVAL_PATH, attribute_name="initial_capture_radius", attribute_values=[0.1])
     viz_eval([EVAL_PATH, f"{EVAL_BASE_PATH}/Jasonov", f"{EVAL_BASE_PATH}/Angelani"], "initial_capture_radius", invert_x=True)

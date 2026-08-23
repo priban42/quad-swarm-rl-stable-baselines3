@@ -407,6 +407,8 @@ class QuadrotorSingle:
             obs_comps = obs_comps + (['ndist'] + ['nangle']) * self.num_use_neighbor_obs
         elif self.neighbor_obs_type == 'dist_angle_vel2d' and self.num_use_neighbor_obs > 0:
             obs_comps = obs_comps + (['ndist'] + ['nangle'] + ['vel2d']) * self.num_use_neighbor_obs
+        elif self.neighbor_obs_type == 'nangle' and self.num_use_neighbor_obs > 0:
+            obs_comps = obs_comps + (['nangle']) * self.num_use_neighbor_obs
 
 
         if self.use_obstacles:
